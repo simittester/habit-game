@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { TabBar } from './components/TabBar';
-import { Header } from './components/Header';
 import { LoadingScreen } from './components/LoadingScreen';
 import { ErrorScreen } from './components/ErrorScreen';
 import TodayScreen from './screens/TodayScreen';
@@ -18,7 +18,7 @@ import ReviewsScreen from './screens/ReviewsScreen';
 import DailyPlansScreen from './screens/DailyPlansScreen';
 import CapturesScreen from './screens/CapturesScreen';
 import ActivityScreen from './screens/ActivityScreen';
-import { useEffect } from 'react';
+import SettingsScreen from './screens/SettingsScreen';
 import { tg } from './lib/telegram';
 
 export default function App() {
@@ -26,7 +26,7 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Telegram back button
+  // Telegram native back button
   useEffect(() => {
     const w = tg.webApp();
     if (!w?.BackButton) return;
@@ -48,7 +48,6 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-full bg-bg text-text">
-      <Header profile={auth.profile} />
       <main className="flex-1 overflow-y-auto pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
         <Routes>
           <Route path="/" element={<Navigate to="/today" replace />} />
@@ -66,10 +65,10 @@ export default function App() {
           <Route path="/more/daily-plans" element={<DailyPlansScreen />} />
           <Route path="/more/captures" element={<CapturesScreen />} />
           <Route path="/more/activity" element={<ActivityScreen />} />
+          <Route path="/more/settings" element={<SettingsScreen profile={auth.profile} />} />
         </Routes>
       </main>
       {showTabs && <TabBar />}
     </div>
   );
 }
-

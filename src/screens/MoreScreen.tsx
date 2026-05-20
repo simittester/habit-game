@@ -17,6 +17,7 @@ const ITEMS: Item[] = [
   { to: '/more/reviews', emoji: '📊', title: 'Reviews', hint: 'Daily & weekly journals' },
   { to: '/more/captures', emoji: '💡', title: 'Captures', hint: 'Ideas waiting for action' },
   { to: '/more/activity', emoji: '⚡', title: 'Activity', hint: 'Everything you logged' },
+  { to: '/more/settings', emoji: '⚙️', title: 'Settings', hint: 'Preferences & account' },
 ];
 
 interface Props { profile: Profile }
@@ -35,7 +36,7 @@ export default function MoreScreen({ profile }: Props) {
           {ITEMS.map((it) => (
             <button
               key={it.to}
-              onClick={() => { tg.selection(); navigate(it.to); }}
+              onClick={() => { tg.haptic('light'); navigate(it.to); }}
               className="w-full flex items-center gap-3 bg-bg-2 rounded-2xl p-3 active:opacity-70 transition"
             >
               <div className="w-11 h-11 rounded-2xl bg-bg-3 flex items-center justify-center text-2xl">{it.emoji}</div>
