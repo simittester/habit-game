@@ -12,11 +12,13 @@ import { EmptyState } from '../components/EmptyState';
 import { AddTaskSheet } from '../components/AddTaskSheet';
 import { AddHabitSheet } from '../components/AddHabitSheet';
 import { AddTimeBlockSheet } from '../components/AddTimeBlockSheet';
+import { AddMealSheet } from '../components/AddMealSheet';
+import { AddExpenseSheet } from '../components/AddExpenseSheet';
 import { GlobalAddButton } from '../components/AddSheet';
 import { listHabits, listTodayLogs, toggleHabitToday, isHabitDueToday } from '../api/habits';
 import { listTopPriorities, toggleTaskDone } from '../api/tasks';
 import { listBlocksForDate, toggleBlock } from '../api/timeblocks';
-import { getWaterToday, setWater, addExpense, addMeal, fetchScoreFor } from '../api/daily';
+import { getWaterToday, setWater, fetchScoreFor, listMealsForDate } from '../api/daily';
 import { todayIso, longDate } from '../lib/dates';
 import { tg } from '../lib/telegram';
 import type { Profile } from '../lib/auth';
@@ -30,12 +32,15 @@ export default function TodayScreen({ profile }: Props) {
   const [taskOpen, setTaskOpen] = useState(false);
   const [habitOpen, setHabitOpen] = useState(false);
   const [blockOpen, setBlockOpen] = useState(false);
+  const [mealOpen, setMealOpen] = useState(false);
+  const [expenseOpen, setExpenseOpen] = useState(false);
 
   const habitsQ = useQuery({ queryKey: ['habits'], queryFn: listHabits });
   const todayLogsQ = useQuery({ queryKey: ['today', 'habit-logs'], queryFn: listTodayLogs });
   const priQ = useQuery({ queryKey: ['tasks', 'top'], queryFn: listTopPriorities });
   const blocksQ = useQuery({ queryKey: ['blocks', todayIso()], queryFn: () => listBlocksForDate() });
   const waterQ = useQuery({ queryKey: ['water', 'today'], queryFn: getWaterToday });
+  const mealsQ = useQuery({ queryKey: ['meals', 'today'], queryFn: () => listMealsForDate() });
   const scoreQ = useQuery({ queryKey: ['score', todayIso()], queryFn: () => fetchScoreFor(todayIso()) });
 
   const todayHabits: Habit[] = (habitsQ.data ?? []).filter((h: Habit) => isHabitDueToday(h));
@@ -88,15 +93,10 @@ export default function TodayScreen({ profile }: Props) {
     onSuccess: () => { tg.notify('success'); qc.invalidateQueries({ queryKey: ['water'] }); qc.invalidateQueries({ queryKey: ['score'] }); },
   });
 
-  const quickMeal = useMutation({
-    mutationFn: () => addMeal({ name: 'Meal', meal_type: 'meal' }),
-    onSuccess: () => { tg.notify('success'); qc.invalidateQueries(); },
-  });
-
-  const quickExpense = useMutation({
-    mutationFn: () => addExpense({ amount: 0, category: 'general', note: 'Quick log' }),
-    onSuccess: () => { tg.notify('success'); navigate('/more/money'); },
-  });
+  const waterGlasses = waterQ.data?.glasses ?? 0;
+  const waterTarget = waterQ.data?.target ?? 8;
+  const waterDone = waterGlasses >= waterTarget;
+  const mealsCount = (mealsQ.data ?? []).length;
 
   return (
     <div className="space-y-2 pt-2 pb-6">
@@ -127,13 +127,30 @@ export default function TodayScreen({ profile }: Props) {
         <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1">
           <CheckInChip
             emoji="💧"
-            title={waterQ.data ? `Water +1` : 'Water +1'}
-            hint={`${waterQ.data?.glasses ?? 0}/${waterQ.data?.target ?? 8} glasses`}
+            title={waterDone ? 'Water' : 'Water +1'}
+            hint={`${waterGlasses}/${waterTarget} glasses`}
             onClick={() => waterPlus.mutate()}
+            done={waterDone}
           />
-          <CheckInChip emoji="🍽️" title="Meal" hint="Quick meal" onClick={() => quickMeal.mutate()} />
-          <CheckInChip emoji="💸" title="Expense" hint="Quick spend" onClick={() => quickExpense.mutate()} />
-          <CheckInChip emoji="😴" title="Sleep" hint="Log sleep" onClick={() => navigate('/more/health')} />
+          <CheckInChip
+            emoji="🍽️"
+            title="Meal"
+            hint={mealsCount === 0 ? 'Log a meal' : `${mealsCount} logged`}
+            onClick={() => setMealOpen(true)}
+            done={mealsCount >= 3}
+          />
+          <CheckInChip
+            emoji="💸"
+            title="Expense"
+            hint="Quick spend"
+            onClick={() => setExpenseOpen(true)}
+          />
+          <CheckInChip
+            emoji="😴"
+            title="Sleep"
+            hint="Coming soon"
+            onClick={() => tg.showAlert('Sleep logging is coming soon.')}
+          />
         </div>
       </Section>
 
@@ -162,7 +179,12 @@ export default function TodayScreen({ profile }: Props) {
 
       <Section title="Your day" action={<button onClick={() => setBlockOpen(true)} className="text-accent text-[13px]"><Plus size={14} className="inline -mt-0.5" /> Add</button>}>
         {(blocksQ.data ?? []).length === 0 ? (
-          <Card><div className="text-hint text-sm text-center py-4">No time blocks scheduled.</div></Card>
+          <button
+            onClick={() => setBlockOpen(true)}
+            className="w-full py-6 rounded-2xl border-2 border-dashed border-divider text-hint text-[13px] hover:border-accent hover:text-accent transition"
+          >
+            + Add time block
+          </button>
         ) : (
           <div className="rounded-2xl overflow-hidden">
             {(blocksQ.data ?? []).map((b: TimeBlock) => (
@@ -170,12 +192,6 @@ export default function TodayScreen({ profile }: Props) {
             ))}
           </div>
         )}
-        <button
-          onClick={() => setBlockOpen(true)}
-          className="mt-3 w-full py-3 rounded-2xl border-2 border-dashed border-divider text-hint text-[13px] hover:border-accent hover:text-accent transition"
-        >
-          + Add time block
-        </button>
       </Section>
 
       <Section title="Habits today" action={<button onClick={() => setHabitOpen(true)} className="text-accent text-[13px]"><Plus size={14} className="inline -mt-0.5" /> Add</button>}>
@@ -198,6 +214,8 @@ export default function TodayScreen({ profile }: Props) {
       <AddTaskSheet open={taskOpen} onClose={() => setTaskOpen(false)} />
       <AddHabitSheet open={habitOpen} onClose={() => setHabitOpen(false)} />
       <AddTimeBlockSheet open={blockOpen} onClose={() => setBlockOpen(false)} />
+      <AddMealSheet open={mealOpen} onClose={() => setMealOpen(false)} />
+      <AddExpenseSheet open={expenseOpen} onClose={() => setExpenseOpen(false)} />
       <GlobalAddButton />
     </div>
   );
