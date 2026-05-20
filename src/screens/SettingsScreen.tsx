@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { LogOut, Check } from 'lucide-react';
 import { Section, Card } from '../components/Card';
 import { getSettings, upsertSettings } from '../api/settings';
 import { signOut } from '../lib/auth';
@@ -22,6 +23,7 @@ export default function SettingsScreen({ profile }: Props) {
   const [currency, setCurrency] = useState('USD');
   const [startOfWeek, setStartOfWeek] = useState(1);
   const [focusCount, setFocusCount] = useState(3);
+  const [justSaved, setJustSaved] = useState(false);
 
   useEffect(() => {
     if (q.data) {
@@ -42,8 +44,30 @@ export default function SettingsScreen({ profile }: Props) {
     onSuccess: () => {
       tg.notify('success');
       qc.invalidateQueries({ queryKey: ['settings'] });
+      setJustSaved(true);
+      setTimeout(() => setJustSaved(false), 1800);
     },
   });
+
+  // Detect unsaved changes
+  const dirty = q.data && (
+    q.data.water_daily_target !== water ||
+    q.data.currency !== currency ||
+    q.data.start_of_week !== startOfWeek ||
+    q.data.daily_focus_count !== focusCount
+  );
+
+  const buttonLabel = saveM.isPending
+    ? 'Saving…'
+    : justSaved
+      ? 'Saved'
+      : dirty
+        ? 'Save changes'
+        : 'Saved';
+
+  const buttonClass = justSaved || !dirty
+    ? 'bg-green-500/20 text-green-400'
+    : 'bg-accent text-white';
 
   return (
     <div className="pb-6">
@@ -64,6 +88,19 @@ export default function SettingsScreen({ profile }: Props) {
               <div className="text-[11px] text-hint">Telegram ID: {profile.telegram_id}</div>
             </div>
           </div>
+          <div className="h-px bg-divider my-3" />
+          <button
+            onClick={async () => {
+              const ok = await tg.showConfirm('Sign out? Your data stays safe — you can sign back in by reopening the mini app.');
+              if (!ok) return;
+              signOut();
+              location.reload();
+            }}
+            className="w-full flex items-center justify-center gap-2 text-red-400 text-[14px] font-medium py-2 active:opacity-60"
+          >
+            <LogOut size={16} />
+            Sign out
+          </button>
         </Card>
       </Section>
 
@@ -111,31 +148,16 @@ export default function SettingsScreen({ profile }: Props) {
         </Card>
       </Section>
 
-      <div className="px-4">
+      <div className="px-4 sticky bottom-3 z-10">
         <button
           onClick={() => saveM.mutate()}
-          disabled={saveM.isPending}
-          className="w-full py-3.5 rounded-full bg-accent text-white font-semibold disabled:opacity-50"
+          disabled={saveM.isPending || (!dirty && !justSaved)}
+          className={`w-full py-3.5 rounded-full font-semibold transition flex items-center justify-center gap-2 disabled:opacity-90 ${buttonClass}`}
         >
-          {saveM.isPending ? 'Saving…' : 'Save changes'}
+          {(justSaved || !dirty) && !saveM.isPending && <Check size={18} strokeWidth={3} />}
+          {buttonLabel}
         </button>
       </div>
-
-      <Section title="Danger zone">
-        <Card>
-          <button
-            onClick={async () => {
-              const ok = await tg.showConfirm('Sign out? You can sign back in by reopening the mini app.');
-              if (!ok) return;
-              signOut();
-              location.reload();
-            }}
-            className="w-full text-red-400 text-[14px] font-semibold py-2"
-          >
-            Sign out
-          </button>
-        </Card>
-      </Section>
 
       <div className="px-4 pt-4 text-[11px] text-hint text-center">
         Momentum · made for you
