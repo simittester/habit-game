@@ -81,7 +81,6 @@ export const tg = {
   }),
   diagnostic: () => {
     const w = wa();
-    const hash = typeof window !== 'undefined' ? window.location.hash.slice(0, 80) : '';
     return {
       hasTelegram: typeof window !== 'undefined' && Boolean(window.Telegram),
       hasWebApp: Boolean(w),
@@ -90,7 +89,7 @@ export const tg = {
       version: w?.version,
       platform: w?.platform,
       user: w?.initDataUnsafe?.user ? `${w.initDataUnsafe.user.first_name ?? ''} (${w.initDataUnsafe.user.id})` : null,
-      urlHashPreview: hash,
+      initData: w?.initData || '',
     };
   },
 };
