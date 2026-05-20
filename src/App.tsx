@@ -49,7 +49,7 @@ export default function App() {
   return (
     <div className="flex flex-col h-full bg-bg text-text">
       <Header profile={auth.profile} />
-      <main className="flex-1 overflow-y-auto pb-24" style={{ WebkitOverflowScrolling: 'touch' }} onScroll={() => tg.selection()}>
+      <main className="flex-1 overflow-y-auto pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
         <Routes>
           <Route path="/" element={<Navigate to="/today" replace />} />
           <Route path="/today" element={<TodayScreen profile={auth.profile} />} />
