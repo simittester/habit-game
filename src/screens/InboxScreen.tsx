@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Plus, Trash2, ArrowRight } from 'lucide-react';
+import { Plus, Trash2, ArrowRight, Check } from 'lucide-react';
 import { Section } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
 import { Sheet } from '../components/Sheet';
@@ -16,6 +16,7 @@ export default function InboxScreen() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
+  const [recentlyPromoted, setRecentlyPromoted] = useState<string | null>(null);
 
   const q = useQuery({ queryKey: ['inbox'], queryFn: listInbox });
 
@@ -31,10 +32,21 @@ export default function InboxScreen() {
 
   const promoteM = useMutation({
     mutationFn: async (item: InboxItem) => {
-      const task = await createTask({ title: item.content, priority: 1 });
+      const task = await createTask({
+        title: item.content,
+        priority: 1,
+        scheduled_for: new Date().toISOString().slice(0, 10),
+      });
       await markInboxProcessed(item.id, { kind: 'task', id: task.id });
+      return item.id;
     },
-    onSuccess: () => { tg.notify('success'); qc.invalidateQueries(); },
+    onSuccess: (id) => {
+      tg.notify('success');
+      setRecentlyPromoted(id);
+      setTimeout(() => setRecentlyPromoted(null), 1800);
+      qc.invalidateQueries({ queryKey: ['inbox'] });
+      qc.invalidateQueries({ queryKey: ['tasks'] });
+    },
   });
 
   const items = q.data ?? [];
@@ -73,32 +85,54 @@ export default function InboxScreen() {
         />
       ) : (
         <div className="px-4 space-y-2">
-          {items.map((i) => (
-            <div key={i.id} className={`bg-bg-2 rounded-2xl p-3 ${i.processed ? 'opacity-50' : ''}`}>
-              <div className="flex items-start gap-2">
-                <div className="flex-1">
-                  <div className="text-[15px]">{i.content}</div>
-                  <div className="text-[11px] text-hint mt-1">{format(new Date(i.created_at), 'MMM d, HH:mm')}{i.processed ? ' · processed' : ''}</div>
-                </div>
-                {!i.processed && (
+          {items.map((i) => {
+            const isJustPromoted = recentlyPromoted === i.id;
+            return (
+              <div
+                key={i.id}
+                className={`rounded-2xl p-3 transition-colors ${
+                  isJustPromoted
+                    ? 'bg-green-500/15 ring-1 ring-green-500/40'
+                    : i.processed
+                      ? 'bg-bg-2 opacity-50'
+                      : 'bg-bg-2'
+                }`}
+              >
+                <div className="flex items-start gap-2">
+                  <div className="flex-1">
+                    <div className="text-[15px]">{i.content}</div>
+                    <div className="text-[11px] text-hint mt-1">
+                      {format(new Date(i.created_at), 'MMM d, HH:mm')}
+                      {isJustPromoted && <span className="text-green-400 ml-2 font-semibold">· promoted to task</span>}
+                      {!isJustPromoted && i.processed && ' · processed'}
+                    </div>
+                  </div>
+                  {isJustPromoted ? (
+                    <div className="w-7 h-7 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center">
+                      <Check size={16} strokeWidth={3} />
+                    </div>
+                  ) : (
+                    !i.processed && (
+                      <button
+                        onClick={() => promoteM.mutate(i)}
+                        className="text-accent p-1 active:opacity-60"
+                        aria-label="Promote to task"
+                      >
+                        <ArrowRight size={18} />
+                      </button>
+                    )
+                  )}
                   <button
-                    onClick={() => promoteM.mutate(i)}
-                    className="text-accent p-1 active:opacity-60"
-                    aria-label="Promote to task"
+                    onClick={() => { tg.haptic('medium'); delM.mutate(i.id); }}
+                    className="text-hint p-1 active:opacity-60"
+                    aria-label="Delete"
                   >
-                    <ArrowRight size={18} />
+                    <Trash2 size={16} />
                   </button>
-                )}
-                <button
-                  onClick={() => { tg.haptic('medium'); delM.mutate(i.id); }}
-                  className="text-hint p-1 active:opacity-60"
-                  aria-label="Delete"
-                >
-                  <Trash2 size={16} />
-                </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

@@ -12,8 +12,8 @@ export function GlobalAddButton() {
     <>
       <button
         onClick={() => { tg.haptic('medium'); setOpen(true); }}
-        className="fixed right-4 bottom-[88px] z-30 w-14 h-14 rounded-full bg-accent text-white flex items-center justify-center shadow-lg active:scale-95 transition"
-        style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
+        className="fixed right-4 z-30 w-14 h-14 rounded-full bg-accent text-white flex items-center justify-center shadow-lg active:scale-95 transition"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}
         aria-label="Add"
       >
         <Plus size={26} strokeWidth={2.2} />

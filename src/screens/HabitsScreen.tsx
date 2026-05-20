@@ -6,7 +6,7 @@ import { EmptyState } from '../components/EmptyState';
 import { HabitRow } from '../components/HabitRow';
 import { AddHabitSheet } from '../components/AddHabitSheet';
 import { GlobalAddButton } from '../components/AddSheet';
-import { listHabits, listTodayLogs, toggleHabitToday } from '../api/habits';
+import { listHabits, listTodayLogs, toggleHabitToday, listHabitStreaks } from '../api/habits';
 import { tg } from '../lib/telegram';
 import type { Habit, HabitLog } from '../types/db';
 
@@ -16,13 +16,19 @@ export default function HabitsScreen() {
 
   const habitsQ = useQuery({ queryKey: ['habits'], queryFn: listHabits });
   const logsQ = useQuery({ queryKey: ['today', 'habit-logs'], queryFn: listTodayLogs });
+  const streaksQ = useQuery({ queryKey: ['habit-streaks'], queryFn: listHabitStreaks });
 
   const doneSet = new Set((logsQ.data ?? []).map((l: HabitLog) => l.habit_id));
+  const streaks = streaksQ.data ?? new Map<string, number>();
   const habits = habitsQ.data ?? [];
 
   const toggle = useMutation({
     mutationFn: ({ id, done }: { id: string; done: boolean }) => toggleHabitToday(id, done),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['today'] }); qc.invalidateQueries({ queryKey: ['score'] }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['today'] });
+      qc.invalidateQueries({ queryKey: ['habit-streaks'] });
+      qc.invalidateQueries({ queryKey: ['score'] });
+    },
   });
 
   return (
@@ -57,6 +63,7 @@ export default function HabitsScreen() {
                 key={h.id}
                 habit={h}
                 done={doneSet.has(h.id)}
+                streak={streaks.get(h.id) ?? 0}
                 onToggle={() => toggle.mutate({ id: h.id, done: doneSet.has(h.id) })}
               />
             ))}

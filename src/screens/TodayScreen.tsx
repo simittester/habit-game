@@ -15,7 +15,7 @@ import { AddTimeBlockSheet } from '../components/AddTimeBlockSheet';
 import { AddMealSheet } from '../components/AddMealSheet';
 import { AddExpenseSheet } from '../components/AddExpenseSheet';
 import { GlobalAddButton } from '../components/AddSheet';
-import { listHabits, listTodayLogs, toggleHabitToday, isHabitDueToday } from '../api/habits';
+import { listHabits, listTodayLogs, toggleHabitToday, isHabitDueToday, listHabitStreaks } from '../api/habits';
 import { listTopPriorities, toggleTaskDone } from '../api/tasks';
 import { listBlocksForDate, toggleBlock } from '../api/timeblocks';
 import { getWaterToday, setWater, fetchScoreFor, listMealsForDate } from '../api/daily';
@@ -37,6 +37,7 @@ export default function TodayScreen({ profile }: Props) {
 
   const habitsQ = useQuery({ queryKey: ['habits'], queryFn: listHabits });
   const todayLogsQ = useQuery({ queryKey: ['today', 'habit-logs'], queryFn: listTodayLogs });
+  const streaksQ = useQuery({ queryKey: ['habit-streaks'], queryFn: listHabitStreaks });
   const priQ = useQuery({ queryKey: ['tasks', 'top'], queryFn: listTopPriorities });
   const blocksQ = useQuery({ queryKey: ['blocks', todayIso()], queryFn: () => listBlocksForDate() });
   const waterQ = useQuery({ queryKey: ['water', 'today'], queryFn: getWaterToday });
@@ -67,6 +68,7 @@ export default function TodayScreen({ profile }: Props) {
     mutationFn: ({ id, done }: { id: string; done: boolean }) => toggleHabitToday(id, done),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['today'] });
+      qc.invalidateQueries({ queryKey: ['habit-streaks'] });
       qc.invalidateQueries({ queryKey: ['score'] });
       qc.invalidateQueries({ queryKey: ['summary'] });
     },
@@ -204,6 +206,7 @@ export default function TodayScreen({ profile }: Props) {
                 key={h.id}
                 habit={h}
                 done={habitLogMap.has(h.id)}
+                streak={streaksQ.data?.get(h.id) ?? 0}
                 onToggle={() => toggleHabit.mutate({ id: h.id, done: habitLogMap.has(h.id) })}
               />
             ))}

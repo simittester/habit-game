@@ -95,6 +95,16 @@ export async function habitStreak(habitId: string): Promise<number> {
   return (data ?? 0) as number;
 }
 
+export async function listHabitStreaks(): Promise<Map<string, number>> {
+  const { data, error } = await sb().rpc('habit_streaks');
+  if (error) throw error;
+  const map = new Map<string, number>();
+  for (const row of (data ?? []) as Array<{ habit_id: string; streak: number }>) {
+    map.set(row.habit_id, row.streak ?? 0);
+  }
+  return map;
+}
+
 export function isHabitDueToday(h: Habit, date = new Date()): boolean {
   const dow = date.getDay(); // 0..6 Sun..Sat
   const isoDow = dow === 0 ? 7 : dow; // 1..7 Mon..Sun
