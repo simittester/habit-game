@@ -50,23 +50,17 @@ export default function SettingsScreen({ profile }: Props) {
   });
 
   // Detect unsaved changes
-  const dirty = q.data && (
-    q.data.water_daily_target !== water ||
-    q.data.currency !== currency ||
-    q.data.start_of_week !== startOfWeek ||
-    q.data.daily_focus_count !== focusCount
+  const dirty = Boolean(q.data) && (
+    q.data!.water_daily_target !== water ||
+    q.data!.currency !== currency ||
+    q.data!.start_of_week !== startOfWeek ||
+    q.data!.daily_focus_count !== focusCount
   );
 
-  const buttonLabel = saveM.isPending
-    ? 'Saving…'
-    : justSaved
-      ? 'Saved'
-      : dirty
-        ? 'Save changes'
-        : 'Saved';
-
-  const buttonClass = justSaved || !dirty
-    ? 'bg-green-500/20 text-green-400'
+  const showButton = dirty || saveM.isPending || justSaved;
+  const buttonLabel = saveM.isPending ? 'Saving…' : justSaved ? 'Saved' : 'Save changes';
+  const buttonClass = justSaved
+    ? 'bg-green-500/15 text-green-400'
     : 'bg-accent text-white';
 
   return (
@@ -148,18 +142,20 @@ export default function SettingsScreen({ profile }: Props) {
         </Card>
       </Section>
 
-      <div className="px-4 sticky bottom-3 z-10">
-        <button
-          onClick={() => saveM.mutate()}
-          disabled={saveM.isPending || (!dirty && !justSaved)}
-          className={`w-full py-3.5 rounded-full font-semibold transition flex items-center justify-center gap-2 disabled:opacity-90 ${buttonClass}`}
-        >
-          {(justSaved || !dirty) && !saveM.isPending && <Check size={18} strokeWidth={3} />}
-          {buttonLabel}
-        </button>
-      </div>
+      {showButton && (
+        <div className="px-4 mt-2">
+          <button
+            onClick={() => saveM.mutate()}
+            disabled={saveM.isPending || justSaved}
+            className={`w-full py-3.5 rounded-full font-semibold transition flex items-center justify-center gap-2 ${buttonClass}`}
+          >
+            {justSaved && <Check size={18} strokeWidth={3} />}
+            {buttonLabel}
+          </button>
+        </div>
+      )}
 
-      <div className="px-4 pt-4 text-[11px] text-hint text-center">
+      <div className="px-4 pt-6 text-[11px] text-hint text-center">
         Momentum · made for you
       </div>
     </div>
