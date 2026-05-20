@@ -1,6 +1,10 @@
-interface Props { message: string }
+import { useState } from 'react';
+import { tg } from '../lib/telegram';
 
-export function ErrorScreen({ message }: Props) {
+interface Props { message: string; diagnostic?: ReturnType<typeof tg.diagnostic> }
+
+export function ErrorScreen({ message, diagnostic }: Props) {
+  const [showDiag, setShowDiag] = useState(false);
   return (
     <div className="flex flex-col items-center justify-center h-full gap-3 px-6 text-center fade-in">
       <div className="text-4xl">🤔</div>
@@ -12,6 +16,17 @@ export function ErrorScreen({ message }: Props) {
       >
         Try again
       </button>
+      <button
+        onClick={() => setShowDiag((v) => !v)}
+        className="text-[11px] text-hint underline"
+      >
+        {showDiag ? 'Hide diagnostics' : 'Show diagnostics'}
+      </button>
+      {showDiag && diagnostic && (
+        <pre className="text-[10px] text-left bg-bg-2 p-3 rounded-xl max-w-[300px] w-full overflow-x-auto whitespace-pre-wrap">
+{JSON.stringify(diagnostic, null, 2)}
+        </pre>
+      )}
     </div>
   );
 }

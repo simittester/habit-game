@@ -6,41 +6,63 @@ import { initTelegram, tg } from '../lib/telegram';
 export type AuthState =
   | { status: 'loading' }
   | { status: 'ready'; profile: Profile }
-  | { status: 'error'; message: string };
+  | { status: 'error'; message: string; diagnostic?: ReturnType<typeof tg.diagnostic> };
 
 export function useAuth(): AuthState {
   const [state, setState] = useState<AuthState>({ status: 'loading' });
 
   useEffect(() => {
-    initTelegram();
-    restoreToken();
+    let cancelled = false;
 
-    const cached = getCachedProfile();
-    const hasInit = Boolean(tg.initData());
+    const tryAuth = async () => {
+      initTelegram();
+      restoreToken();
 
-    // If we have a cached valid token + profile, use it immediately while refreshing in background
-    if (cached && isTokenValid()) {
-      setState({ status: 'ready', profile: cached });
-      // Optional background refresh
-      if (hasInit) {
-        signInWithTelegram()
-          .then((r) => setState({ status: 'ready', profile: r.profile }))
-          .catch(() => { /* keep cached */ });
+      const cached = getCachedProfile();
+      let hasInit = Boolean(tg.initData());
+
+      // If we have a cached valid token + profile, use it immediately while refreshing in background
+      if (cached && isTokenValid()) {
+        if (!cancelled) setState({ status: 'ready', profile: cached });
+        if (hasInit) {
+          signInWithTelegram()
+            .then((r) => { if (!cancelled) setState({ status: 'ready', profile: r.profile }); })
+            .catch(() => { /* keep cached */ });
+        }
+        return;
       }
-      return;
-    }
 
-    if (!hasInit) {
-      setState({
-        status: 'error',
-        message: 'Open this app inside Telegram. (No initData found in browser preview.)',
-      });
-      return;
-    }
+      // Telegram WebApp script may set initData slightly after page load — retry a few times
+      for (let i = 0; i < 8 && !hasInit; i++) {
+        await new Promise((r) => setTimeout(r, 150));
+        initTelegram();
+        hasInit = Boolean(tg.initData());
+      }
 
-    signInWithTelegram()
-      .then((r) => setState({ status: 'ready', profile: r.profile }))
-      .catch((e: Error) => setState({ status: 'error', message: e.message }));
+      if (!hasInit) {
+        if (!cancelled) {
+          setState({
+            status: 'error',
+            message: 'Open this app inside Telegram. (No initData found.)',
+            diagnostic: tg.diagnostic(),
+          });
+        }
+        return;
+      }
+
+      signInWithTelegram()
+        .then((r) => { if (!cancelled) setState({ status: 'ready', profile: r.profile }); })
+        .catch((e: Error) => {
+          if (!cancelled) setState({
+            status: 'error',
+            message: e.message,
+            diagnostic: tg.diagnostic(),
+          });
+        });
+    };
+
+    tryAuth();
+    return () => { cancelled = true; };
   }, []);
 
   return state;

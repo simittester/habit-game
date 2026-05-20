@@ -28,8 +28,8 @@ export default function App() {
 
   // Telegram back button
   useEffect(() => {
-    const w = window.Telegram?.WebApp;
-    if (!w) return;
+    const w = tg.webApp();
+    if (!w?.BackButton) return;
     const onBack = () => navigate(-1);
     const isDetail = !['/today', '/inbox', '/habits', '/progress', '/more', '/'].includes(location.pathname);
     if (isDetail) {
@@ -38,11 +38,11 @@ export default function App() {
     } else {
       w.BackButton.hide();
     }
-    return () => { w.BackButton.offClick(onBack); };
+    return () => { w.BackButton?.offClick(onBack); };
   }, [location.pathname, navigate]);
 
   if (auth.status === 'loading') return <LoadingScreen />;
-  if (auth.status === 'error') return <ErrorScreen message={auth.message} />;
+  if (auth.status === 'error') return <ErrorScreen message={auth.message} diagnostic={auth.diagnostic} />;
 
   const showTabs = ['/today', '/inbox', '/habits', '/progress', '/more'].includes(location.pathname);
 
@@ -73,10 +73,3 @@ export default function App() {
   );
 }
 
-declare global {
-  interface Window {
-    Telegram?: { WebApp: {
-      BackButton: { show: () => void; hide: () => void; onClick: (cb: () => void) => void; offClick: (cb: () => void) => void };
-    } };
-  }
-}
