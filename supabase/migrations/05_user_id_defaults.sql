@@ -1,0 +1,13 @@
+alter table habits        alter column user_id set default app_user_id();
+alter table tasks         alter column user_id set default app_user_id();
+alter table areas         alter column user_id set default app_user_id();
+alter table projects      alter column user_id set default app_user_id();
+alter table habit_logs    alter column user_id set default app_user_id();
+alter table inbox_items   alter column user_id set default app_user_id();
+alter table time_blocks   alter column user_id set default app_user_id();
+alter table water_logs    alter column user_id set default app_user_id();
+alter table meals         alter column user_id set default app_user_id();
+alter table expenses      alter column user_id set default app_user_id();
+alter table reviews       alter column user_id set default app_user_id();
+alter table rituals       alter column user_id set default app_user_id();
+alter table user_settings alter column user_id set default app_user_id();
