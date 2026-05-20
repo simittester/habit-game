@@ -1,73 +1,74 @@
-# React + TypeScript + Vite
+# Habit Game
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A personal habit / task / focus tracker that runs as a Telegram Mini App.
 
-Currently, two official plugins are available:
+Stack: **React 19 + Vite + Tailwind v4 + Supabase + @twa-dev/sdk**, deployed on **Vercel**.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- **Today** — progress ring, daily score, top priorities, time blocks, habits due today, quick check-in chips (water/meal/expense/sleep)
+- **Inbox** — capture tasks/ideas, promote into tasks
+- **Habits** — daily / weekdays / weekends frequency, streak counters, suggestions
+- **Progress** — 7D/14D/30D/Month range, score gauge, stat cards, collapsible category sections
+- **More** — Projects, Areas, Rituals, Health (water/meals), Money (expenses), Daily Plans, Reviews, Activity
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Architecture
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+Telegram client (Mini App)
+    │  initData (HMAC-signed by Telegram)
+    ▼
+Vercel-hosted React SPA (this repo)
+    │  POST /functions/v1/telegram-auth { initData }
+    ▼
+Supabase Edge Function (telegram-auth)
+    │  Verifies HMAC, upserts profiles row, mints Supabase-compatible JWT
+    ▼
+Client uses JWT in Authorization header for direct Supabase calls
+    │
+    ▼
+PostgreSQL (14 tables, RLS scoped by JWT.sub = profiles.id)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Env vars
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Client (Vercel)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Name | Value |
+|---|---|
+| `VITE_SUPABASE_URL` | `https://bmincaoicwpdqifkyazb.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | `sb_publishable_...` |
+
+### Edge function (Supabase Dashboard → Settings → Functions → Secrets)
+
+| Name | Where to find |
+|---|---|
+| `TELEGRAM_BOT_TOKEN` | BotFather, when you create the bot |
+| `SUPABASE_JWT_SECRET` | Supabase Dashboard → Settings → API → JWT Secret |
+
+`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are auto-injected by Supabase.
+
+## Local dev
+
+```bash
+npm install
+npm run dev
 ```
+
+Open `http://localhost:5173`. You'll see an error screen because `initData` is only present inside Telegram. For real testing, deploy to Vercel and open via the bot.
+
+## Deploying
+
+1. Push to GitHub.
+2. In Vercel: New Project → Import → Vite preset → add the env vars above → Deploy.
+3. In BotFather: `/myapps` → pick your app → Edit Web App URL → paste the Vercel HTTPS URL.
+4. Open the bot in Telegram, tap the Mini App button.
+
+## Schema
+
+Migrations live in Supabase project `bmincaoicwpdqifkyazb`:
+
+- `01_profiles_and_helpers` — `profiles` + updated_at trigger
+- `02_core_tables` — `areas`, `projects`, `habits`, `habit_logs`, `tasks`, `inbox_items`, `time_blocks`, `water_logs`, `meals`, `expenses`, `reviews`, `rituals`, `user_settings`
+- `03_rls_policies` — RLS on every table, `app_user_id()` helper reading JWT `sub` claim
+- `04_views_and_rpc` — `daily_summary` view, `habit_streak()` and `daily_score()` functions
