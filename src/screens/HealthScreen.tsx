@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Plus, Minus, Trash2, Ruler, Weight, Pencil } from 'lucide-react';
+import { Plus, Minus, Trash2, Ruler, Weight } from 'lucide-react';
 import { Section, Card } from '../components/Card';
 import { Sheet } from '../components/Sheet';
 import { TextField } from '../components/Input';
@@ -89,19 +89,11 @@ export default function HealthScreen() {
                 <Ruler size={12} /> Height
               </div>
               {height ? (
-                <button
-                  onClick={() => { tg.haptic('light'); setHeightOpen(true); }}
-                  className="text-[18px] font-semibold tabular-nums active:opacity-60"
-                >
+                <div className="text-[18px] font-semibold tabular-nums">
                   {Math.round(height)} <span className="text-[12px] text-hint">cm</span>
-                </button>
+                </div>
               ) : (
-                <button
-                  onClick={() => { tg.haptic('light'); setHeightOpen(true); }}
-                  className="text-[12px] text-accent font-medium active:opacity-60"
-                >
-                  Set
-                </button>
+                <div className="text-[14px] text-hint">—</div>
               )}
               {bmiValue > 0 && (
                 <div className="mt-2">
@@ -123,12 +115,20 @@ export default function HealthScreen() {
             </div>
           )}
 
-          <button
-            onClick={() => { tg.haptic('medium'); setWeightOpen(true); }}
-            className="mt-3 w-full py-2.5 rounded-2xl bg-bg-3 text-[13px] font-semibold active:opacity-70 flex items-center justify-center gap-1.5"
-          >
-            <Pencil size={13} /> Log weight
-          </button>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              onClick={() => { tg.haptic('medium'); setWeightOpen(true); }}
+              className="py-2.5 rounded-2xl bg-bg-3 text-[13px] font-semibold active:opacity-70 flex items-center justify-center gap-1.5"
+            >
+              <Weight size={13} /> Log weight
+            </button>
+            <button
+              onClick={() => { tg.haptic('medium'); setHeightOpen(true); }}
+              className="py-2.5 rounded-2xl bg-bg-3 text-[13px] font-semibold active:opacity-70 flex items-center justify-center gap-1.5"
+            >
+              <Ruler size={13} /> {height ? 'Edit height' : 'Set height'}
+            </button>
+          </div>
         </Card>
       </Section>
 
