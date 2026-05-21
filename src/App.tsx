@@ -8,6 +8,7 @@ import TodayScreen from './screens/TodayScreen';
 import InboxScreen from './screens/InboxScreen';
 import HabitsScreen from './screens/HabitsScreen';
 import HabitDetailScreen from './screens/HabitDetailScreen';
+import ArchivedHabitsScreen from './screens/ArchivedHabitsScreen';
 import ProgressScreen from './screens/ProgressScreen';
 import MoreScreen from './screens/MoreScreen';
 import ProjectsScreen from './screens/ProjectsScreen';
@@ -56,6 +57,7 @@ export default function App() {
           <Route path="/today" element={<TodayScreen profile={auth.profile} />} />
           <Route path="/inbox" element={<InboxScreen />} />
           <Route path="/habits" element={<HabitsScreen />} />
+          <Route path="/habits/archived" element={<ArchivedHabitsScreen />} />
           <Route path="/habits/:id" element={<HabitDetailScreen />} />
           <Route path="/progress" element={<ProgressScreen />} />
           <Route path="/more" element={<MoreScreen profile={auth.profile} />} />
