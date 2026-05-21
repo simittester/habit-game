@@ -155,7 +155,31 @@ export default function SettingsScreen({ profile }: Props) {
         </div>
       )}
 
-      <div className="px-4 pt-6 text-[11px] text-hint text-center">
+      <Section title="Legal">
+        <Card>
+          <a
+            href="/legal/privacy.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between py-2.5 text-[14px] active:opacity-60"
+          >
+            <span>Privacy policy</span>
+            <span className="text-hint">↗</span>
+          </a>
+          <div className="h-px bg-divider" />
+          <a
+            href="/legal/terms.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between py-2.5 text-[14px] active:opacity-60"
+          >
+            <span>Terms of service</span>
+            <span className="text-hint">↗</span>
+          </a>
+        </Card>
+      </Section>
+
+      <div className="px-4 pt-2 text-[11px] text-hint text-center">
         Momentum · made for you
       </div>
     </div>

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy Policy · Momentum</title>
+  <meta name="theme-color" content="#0a0a0c" />
+  <style>
+    :root {
+      --bg: #0a0a0c;
+      --card: #16151a;
+      --text: #f5f5f7;
+      --hint: #8e8e93;
+      --accent: #8b5cf6;
+      --divider: rgba(255, 255, 255, 0.07);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+    main { max-width: 720px; margin: 0 auto; padding: 32px 20px 80px; }
+    .nav { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; font-size: 13px; color: var(--hint); }
+    .nav a { color: var(--accent); text-decoration: none; }
+    h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 8px; }
+    .meta { color: var(--hint); font-size: 13px; margin-bottom: 32px; }
+    h2 { font-size: 18px; font-weight: 700; margin: 32px 0 8px; }
+    p, li { font-size: 15px; line-height: 1.55; color: #e5e5ea; }
+    ul { padding-left: 20px; margin: 4px 0 12px; }
+    li { margin: 4px 0; }
+    code { background: var(--card); padding: 2px 6px; border-radius: 6px; font-family: ui-monospace, monospace; font-size: 13px; color: var(--accent); }
+    .card { background: var(--card); border-radius: 16px; padding: 18px 20px; margin: 16px 0; border: 1px solid var(--divider); }
+    .footer { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--divider); color: var(--hint); font-size: 12px; }
+    .footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="nav"><a href="/legal/terms.html">Terms of Service</a> · <a href="https://t.me/momentumcore_bot/momentum">Open Momentum</a></div>
+    <h1>Privacy Policy</h1>
+    <p class="meta">Last updated: 21 May 2026</p>
+
+    <p>Momentum is a personal productivity Mini App that runs inside Telegram. This page explains what data we collect, how we use it, and your rights over it.</p>
+
+    <h2>1. Who we are</h2>
+    <p>Momentum is operated as a personal product. Contact: <code>@momentumcore_bot</code> on Telegram.</p>
+
+    <h2>2. What we collect</h2>
+    <ul>
+      <li><strong>Telegram identity</strong> — your Telegram <code>user id</code>, first name, last name (if set), username (if set), language code, premium flag, and profile photo URL. This is shared with us by Telegram when you open the Mini App.</li>
+      <li><strong>Content you create</strong> — habits, tasks, projects, areas, time blocks, water/meal/expense logs, rituals, reviews, weight entries, height, and app settings.</li>
+      <li><strong>Timestamps</strong> — when you created or updated each item.</li>
+    </ul>
+
+    <h2>3. What we don't collect</h2>
+    <ul>
+      <li>Your Telegram messages or chats.</li>
+      <li>Your contacts.</li>
+      <li>Your location.</li>
+      <li>Analytics or behavioural tracking (no Google Analytics, no Pixel, no third-party trackers).</li>
+      <li>Payment card data (handled by payment providers if you subscribe).</li>
+    </ul>
+
+    <h2>4. How we use it</h2>
+    <ul>
+      <li>To show you your own data inside the app.</li>
+      <li>To compute streaks, scores, summaries, and statistics that power the app's features.</li>
+      <li>To improve the product based on aggregated, non-personally-identifying usage signals.</li>
+    </ul>
+    <p>We do not sell your data. We do not advertise to you. We do not share your data with third parties for marketing.</p>
+
+    <h2>5. Where it lives</h2>
+    <ul>
+      <li><strong>Supabase</strong> (Postgres database hosted in eu-west-1) — stores all your content, encrypted at rest. <a href="https://supabase.com/privacy" style="color:var(--accent)">Supabase privacy policy</a>.</li>
+      <li><strong>Vercel</strong> — serves the app interface. <a href="https://vercel.com/legal/privacy-policy" style="color:var(--accent)">Vercel privacy policy</a>.</li>
+      <li><strong>Telegram</strong> — the platform you use to access Momentum. Subject to <a href="https://telegram.org/privacy" style="color:var(--accent)">Telegram's privacy policy</a>.</li>
+    </ul>
+    <p>Data is transmitted over HTTPS only.</p>
+
+    <h2>6. Your rights</h2>
+    <ul>
+      <li><strong>Access</strong> — all your data is visible inside the app.</li>
+      <li><strong>Export</strong> — message <code>@momentumcore_bot</code> on Telegram and we'll send you a JSON dump within 30 days.</li>
+      <li><strong>Delete</strong> — message <code>@momentumcore_bot</code> with "delete my account" and we'll permanently remove your profile and all linked content within 30 days.</li>
+      <li><strong>Correct</strong> — edit any item directly in the app.</li>
+    </ul>
+
+    <h2>7. Retention</h2>
+    <p>We keep your data for as long as you use Momentum. If you don't open the app for 12 months, we may delete inactive accounts. We will not delete your account without trying to notify you first.</p>
+
+    <h2>8. Security</h2>
+    <p>Data is protected by:</p>
+    <ul>
+      <li>HTTPS encryption in transit.</li>
+      <li>Database-level Row-Level Security — every row is scoped to your Telegram user ID, so other users cannot see your data even at the database level.</li>
+      <li>Server-side verification of Telegram's HMAC signature on every sign-in.</li>
+    </ul>
+
+    <h2>9. Children</h2>
+    <p>Momentum is not intended for users under 13. We don't knowingly collect data from children.</p>
+
+    <h2>10. Changes</h2>
+    <p>If we materially change this policy we'll notify you inside the app on next launch. The "Last updated" date at the top reflects the current version.</p>
+
+    <h2>11. Contact</h2>
+    <p>Questions, deletion requests, or anything else: <code>@momentumcore_bot</code> on Telegram.</p>
+
+    <div class="footer">
+      Momentum · <a href="/legal/terms.html">Terms of Service</a> · <a href="https://t.me/momentumcore_bot/momentum">Open the app</a>
+    </div>
+  </main>
+</body>
+</html>
