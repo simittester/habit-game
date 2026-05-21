@@ -19,3 +19,10 @@ export async function upsertSettings(patch: Partial<UserSettings>): Promise<User
   if (error) throw error;
   return data as UserSettings;
 }
+
+export async function markOnboarded(): Promise<void> {
+  const { error } = await sb()
+    .from('user_settings')
+    .upsert({ onboarded_at: new Date().toISOString() } as Record<string, unknown>, { onConflict: 'user_id' });
+  if (error) throw error;
+}

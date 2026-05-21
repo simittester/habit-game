@@ -1,9 +1,12 @@
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from './hooks/useAuth';
 import { TabBar } from './components/TabBar';
 import { LoadingScreen } from './components/LoadingScreen';
 import { ErrorScreen } from './components/ErrorScreen';
+import { getSettings } from './api/settings';
+import OnboardingScreen from './screens/OnboardingScreen';
 import TodayScreen from './screens/TodayScreen';
 import InboxScreen from './screens/InboxScreen';
 import HabitsScreen from './screens/HabitsScreen';
@@ -29,6 +32,13 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const settingsQ = useQuery({
+    queryKey: ['settings'],
+    queryFn: getSettings,
+    enabled: auth.status === 'ready',
+    staleTime: 60_000,
+  });
+
   // Telegram native back button
   useEffect(() => {
     const w = tg.webApp();
@@ -46,6 +56,12 @@ export default function App() {
 
   if (auth.status === 'loading') return <LoadingScreen />;
   if (auth.status === 'error') return <ErrorScreen message={auth.message} diagnostic={auth.diagnostic} />;
+
+  // First-time user: show onboarding instead of the main app shell
+  if (settingsQ.isLoading) return <LoadingScreen />;
+  if (settingsQ.data && !settingsQ.data.onboarded_at) {
+    return <OnboardingScreen profile={auth.profile} />;
+  }
 
   const showTabs = ['/today', '/inbox', '/habits', '/progress', '/more'].includes(location.pathname);
 

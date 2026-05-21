@@ -170,6 +170,7 @@ export interface UserSettings {
   start_of_week: number;
   daily_focus_count: number;
   notifications: Record<string, unknown>;
+  onboarded_at: string | null;
   updated_at: string;
 }
 
