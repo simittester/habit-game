@@ -162,6 +162,9 @@ export interface Ritual {
   updated_at: string;
 }
 
+export type SubscriptionStatus = 'trial' | 'active' | 'cancelled' | 'expired';
+export type SubscriptionTier = 'week' | 'month' | 'year';
+
 export interface UserSettings {
   user_id: string;
   water_daily_target: number;
@@ -174,6 +177,11 @@ export interface UserSettings {
   height_cm: number | null;
   weight_unit: 'kg' | 'lb';
   target_weight_kg: number | null;
+  trial_started_at: string | null;
+  trial_ends_at: string | null;
+  subscription_status: SubscriptionStatus;
+  subscription_tier: SubscriptionTier | null;
+  subscription_renews_at: string | null;
   updated_at: string;
 }
 

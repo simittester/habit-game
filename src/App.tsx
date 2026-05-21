@@ -24,6 +24,8 @@ import DailyPlansScreen from './screens/DailyPlansScreen';
 import CapturesScreen from './screens/CapturesScreen';
 import ActivityScreen from './screens/ActivityScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import { TrialBanner } from './components/TrialBanner';
+import { PaywallSheet } from './components/PaywallSheet';
 import { tg } from './lib/telegram';
 
 export default function App() {
@@ -66,6 +68,7 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-full bg-bg text-text">
+      <TrialBanner />
       <main className="flex-1 overflow-y-auto pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
         <Routes>
           <Route path="/" element={<Navigate to="/today" replace />} />
@@ -89,6 +92,7 @@ export default function App() {
         </Routes>
       </main>
       {showTabs && <TabBar />}
+      <PaywallSheet />
     </div>
   );
 }
