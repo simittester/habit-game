@@ -61,8 +61,8 @@ export function initTelegram() {
     w.ready();
     w.expand();
     w.disableVerticalSwipes?.();
-    w.setHeaderColor?.('#0b0b0d');
-    w.setBackgroundColor?.('#0b0b0d');
+    w.setHeaderColor?.('#0a0a0c');
+    w.setBackgroundColor?.('#0a0a0c');
     initialized = true;
   } catch { /* not in Telegram */ }
 }

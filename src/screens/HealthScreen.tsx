@@ -154,7 +154,7 @@ export default function HealthScreen() {
       <Section title="Hydration">
         <Card>
           <div className="flex items-center gap-4">
-            <ProgressRing value={glasses / target} size={64} stroke={6} label={`${glasses}/${target}`} color="#60a5fa" pulseAtComplete={false} />
+            <ProgressRing value={glasses / target} size={64} stroke={6} label={`${glasses}/${target}`} color="var(--color-water)" pulseAtComplete={false} />
             <div className="flex-1">
               <div className="text-[16px] font-semibold">Water</div>
               <div className="text-[13px] text-hint">{glasses} of {target} glasses</div>

@@ -1,19 +1,24 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #0b0b0d;
-  --color-bg-2: #161618;
-  --color-bg-3: #1f1f23;
-  --color-bg-4: #2a2a2f;
+  --color-bg: #0a0a0c;
+  --color-bg-2: #16151a;
+  --color-bg-3: #201f26;
+  --color-bg-4: #2b2933;
   --color-text: #f5f5f7;
   --color-text-2: #c7c7cc;
   --color-hint: #8e8e93;
   --color-divider: rgba(255, 255, 255, 0.07);
-  --color-accent: #3b82f6;
-  --color-accent-2: #60a5fa;
+
+  /* Brand: Momentum electric purple */
+  --color-accent: #8b5cf6;       /* violet-500, slightly brighter than 600 for dark bg */
+  --color-accent-2: #a78bfa;     /* violet-400, for highlights */
+  --color-accent-soft: #7c3aed;  /* violet-600, for solid CTAs that need contrast */
+
   --color-success: #34d399;
   --color-warn: #fbbf24;
   --color-danger: #f87171;
+  --color-water: #60a5fa;        /* keep blue for water — semantic */
 
   --radius-card: 18px;
   --radius-chip: 14px;

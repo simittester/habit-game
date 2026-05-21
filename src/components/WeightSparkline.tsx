@@ -8,7 +8,7 @@ interface Props {
 }
 
 // Simple SVG sparkline of weight over time.
-export function WeightSparkline({ logs, width = 280, height = 60, color = 'var(--color-accent)' }: Props) {
+export function WeightSparkline({ logs, width = 280, height = 60, color = 'var(--color-accent-2)' }: Props) {
   if (logs.length < 2) {
     return <div className="text-[11px] text-hint text-center py-4">Log at least 2 days to see a trend.</div>;
   }
