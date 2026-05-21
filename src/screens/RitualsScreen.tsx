@@ -52,7 +52,7 @@ export default function RitualsScreen() {
         <div className="mt-2 flex items-start justify-between">
           <div>
             <h1 className="text-[28px] font-bold leading-tight">Rituals</h1>
-            <div className="text-[14px] text-hint">Weekly review and shutdown.</div>
+            <div className="text-[14px] text-hint">Repeatable routines you do on autopilot — morning kickstart, evening shutdown, weekly review.</div>
           </div>
           <button onClick={() => setOpen(true)} className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center active:scale-95">
             <Plus size={20} />
@@ -62,7 +62,11 @@ export default function RitualsScreen() {
 
       {items.length === 0 ? (
         <>
-          <EmptyState emoji="🔁" title="No rituals yet." hint="Start with a tested template:" />
+          <EmptyState
+            emoji="🔁"
+            title="No rituals yet."
+            hint="A ritual is a short checklist you run on autopilot (e.g. before bed, every Sunday). Start with a tested template:"
+          />
           <div className="px-4 space-y-2">
             {TEMPLATES.map((t) => (
               <button

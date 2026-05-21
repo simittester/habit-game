@@ -42,7 +42,7 @@ export default function ReviewsScreen() {
     <div className="pb-6">
       <Section title="">
         <h1 className="text-[28px] font-bold leading-tight mt-2">Reviews</h1>
-        <div className="text-[14px] text-hint">Daily & weekly journals.</div>
+        <div className="text-[14px] text-hint">A 60-second journal: what went well, what didn't, one focus for tomorrow.</div>
       </Section>
 
       <Section title="Today">

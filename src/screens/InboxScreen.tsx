@@ -7,7 +7,6 @@ import { Sheet } from '../components/Sheet';
 import { TextArea } from '../components/Input';
 import { listInbox, createInboxItem, deleteInboxItem, markInboxProcessed } from '../api/inbox';
 import { createTask } from '../api/tasks';
-import { GlobalAddButton } from '../components/AddSheet';
 import { tg } from '../lib/telegram';
 import { format } from 'date-fns';
 import type { InboxItem } from '../types/db';
@@ -148,8 +147,6 @@ export default function InboxScreen() {
           </button>
         </div>
       </Sheet>
-
-      <GlobalAddButton />
     </div>
   );
 }

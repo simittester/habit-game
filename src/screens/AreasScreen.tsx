@@ -33,7 +33,7 @@ export default function AreasScreen() {
         <div className="mt-2 flex items-start justify-between">
           <div>
             <h1 className="text-[28px] font-bold leading-tight">Areas</h1>
-            <div className="text-[14px] text-hint">Balance life domains.</div>
+            <div className="text-[14px] text-hint">The big buckets of your life. Group projects, habits, and tasks under them.</div>
           </div>
           <button onClick={() => setOpen(true)} className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center active:scale-95">
             <Plus size={20} />
@@ -42,7 +42,11 @@ export default function AreasScreen() {
       </Section>
 
       {items.length === 0 ? (
-        <EmptyState emoji="🗂️" title="No areas yet." hint="Group related projects and habits under areas." />
+        <EmptyState
+          emoji="🗂️"
+          title="No areas yet."
+          hint="Think Health, Work, Family, Money, Learning. Areas are evergreen — they don't end, you just keep them healthy. Used to group your projects and habits."
+        />
       ) : (
         <div className="px-4 grid grid-cols-2 gap-3">
           {items.map((a) => (

@@ -5,7 +5,6 @@ import { Section } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
 import { HabitRow } from '../components/HabitRow';
 import { AddHabitSheet } from '../components/AddHabitSheet';
-import { GlobalAddButton } from '../components/AddSheet';
 import { listHabits, listTodayLogs, toggleHabitToday, listHabitStreaks } from '../api/habits';
 import { tg } from '../lib/telegram';
 import type { Habit, HabitLog } from '../types/db';
@@ -72,7 +71,6 @@ export default function HabitsScreen() {
       )}
 
       <AddHabitSheet open={open} onClose={() => setOpen(false)} />
-      <GlobalAddButton />
     </div>
   );
 }
