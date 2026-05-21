@@ -8,6 +8,7 @@ import { ProgressRing } from '../components/ProgressRing';
 import { WeightSparkline } from '../components/WeightSparkline';
 import { LogWeightSheet } from '../components/LogWeightSheet';
 import { SetHeightSheet } from '../components/SetHeightSheet';
+import { WeightHistorySheet } from '../components/WeightHistorySheet';
 import { getWaterToday, setWater, listMealsForDate, addMeal, deleteMeal } from '../api/daily';
 import { getSettings } from '../api/settings';
 import { listWeightLogs, bmi, bmiBucket } from '../api/body';
@@ -20,6 +21,7 @@ export default function HealthScreen() {
   const [mealOpen, setMealOpen] = useState(false);
   const [weightOpen, setWeightOpen] = useState(false);
   const [heightOpen, setHeightOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [mealName, setMealName] = useState('');
   const [mealType, setMealType] = useState<MealType>('meal');
   const [calories, setCalories] = useState('');
@@ -45,7 +47,8 @@ export default function HealthScreen() {
   const target = waterQ.data?.target ?? 8;
 
   const weights = (weightQ.data ?? []) as WeightLog[];
-  const latestWeight = weights.length ? Number(weights[weights.length - 1].weight_kg) : null;
+  const latestLog = weights.length ? weights[weights.length - 1] : null;
+  const latestWeight = latestLog ? Number(latestLog.weight_kg) : null;
   const previousWeight = weights.length >= 2 ? Number(weights[weights.length - 2].weight_kg) : null;
   const weightDelta = latestWeight !== null && previousWeight !== null ? latestWeight - previousWeight : null;
 
@@ -78,6 +81,9 @@ export default function HealthScreen() {
                       {weightDelta > 0 ? '+' : ''}{weightDelta.toFixed(1)} kg vs last log
                     </div>
                   )}
+                  {latestLog?.note && (
+                    <div className="text-[12px] text-text/80 mt-1.5 italic line-clamp-2">"{latestLog.note}"</div>
+                  )}
                 </>
               ) : (
                 <div className="text-[14px] text-hint">No weight logged yet.</div>
@@ -105,14 +111,27 @@ export default function HealthScreen() {
           </div>
 
           {weights.length >= 2 && (
-            <div className="mt-3">
+            <button
+              onClick={() => { tg.haptic('light'); setHistoryOpen(true); }}
+              className="mt-3 w-full block text-left active:opacity-70"
+              aria-label="Open weight history"
+            >
               <WeightSparkline logs={weights} />
               <div className="flex items-center justify-between text-[10px] text-hint mt-1">
                 <span>{format(new Date(weights[0].log_date), 'MMM d')}</span>
-                <span>last 90 days</span>
+                <span className="text-accent">view history →</span>
                 <span>{format(new Date(weights[weights.length - 1].log_date), 'MMM d')}</span>
               </div>
-            </div>
+            </button>
+          )}
+
+          {weights.length === 1 && (
+            <button
+              onClick={() => { tg.haptic('light'); setHistoryOpen(true); }}
+              className="mt-3 w-full py-1.5 text-[11px] text-accent active:opacity-60"
+            >
+              View history →
+            </button>
           )}
 
           <div className="mt-3 grid grid-cols-2 gap-2">
@@ -177,6 +196,7 @@ export default function HealthScreen() {
 
       <LogWeightSheet open={weightOpen} onClose={() => setWeightOpen(false)} initial={latestWeight ?? undefined} />
       <SetHeightSheet open={heightOpen} onClose={() => setHeightOpen(false)} initial={height ?? null} />
+      <WeightHistorySheet open={historyOpen} onClose={() => setHistoryOpen(false)} />
 
       <Sheet open={mealOpen} onClose={() => setMealOpen(false)} title="Log a meal">
         <div className="space-y-3 pt-2">
