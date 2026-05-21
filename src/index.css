@@ -87,3 +87,36 @@ button {
   to { opacity: 1; }
 }
 .fade-in { animation: fade 180ms ease both; }
+
+@keyframes scale-pop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.18); }
+  70%  { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+.scale-pop { animation: scale-pop 360ms cubic-bezier(.2,.8,.2,1) both; }
+
+@keyframes ring-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.45); }
+  50%      { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+}
+.ring-pulse { animation: ring-pulse 1600ms ease-in-out infinite; }
+
+@keyframes flame-bob {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50%      { transform: translateY(-1px) rotate(3deg); }
+}
+.flame-bob { animation: flame-bob 1400ms ease-in-out infinite; transform-origin: 50% 90%; }
+
+@keyframes confetti {
+  0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(var(--cx), var(--cy)) rotate(var(--cr)); opacity: 0; }
+}
+.confetti-piece { animation: confetti 900ms cubic-bezier(.2,.8,.2,1) both; }
+
+@keyframes slide-out-right {
+  0%   { transform: translateX(0); opacity: 1; max-height: 80px; }
+  60%  { transform: translateX(120%); opacity: 0; max-height: 80px; }
+  100% { transform: translateX(120%); opacity: 0; max-height: 0; padding: 0; margin: 0; }
+}
+.slide-out-right { animation: slide-out-right 380ms cubic-bezier(.4,0,.2,1) both; }

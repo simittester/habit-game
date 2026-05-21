@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { Card, Section } from '../components/Card';
 import { ProgressRing } from '../components/ProgressRing';
+import { CountUp } from '../components/CountUp';
 import { CheckInChip } from '../components/CheckInChip';
 import { HabitRow } from '../components/HabitRow';
 import { TaskRow } from '../components/TaskRow';
@@ -54,7 +55,6 @@ export default function TodayScreen({ profile }: Props) {
   const total = todayHabits.length + tasks.length;
   const done = habitsDone + tasksDone;
   const pct = total === 0 ? 0 : done / total;
-  const pctLabel = `${Math.round(pct * 100)}%`;
 
   const greet = (() => {
     const h = new Date().getHours();
@@ -110,14 +110,27 @@ export default function TodayScreen({ profile }: Props) {
 
         <Card>
           <div className="flex items-center gap-4">
-            <ProgressRing value={pct} size={64} stroke={6} label={pctLabel} />
+            <div className="relative" style={{ width: 64, height: 64 }}>
+              <ProgressRing value={pct} size={64} stroke={6} />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <CountUp
+                  value={pct * 100}
+                  className="text-[13px] font-semibold tabular-nums"
+                  format={(v) => `${Math.round(v)}%`}
+                />
+              </div>
+            </div>
             <div className="flex-1">
-              <div className="text-[16px] font-semibold">{pctLabel} complete</div>
+              <div className="text-[16px] font-semibold">
+                <CountUp value={pct * 100} format={(v) => `${Math.round(v)}%`} /> complete
+              </div>
               <div className="text-[13px] text-hint">{tasksDone} of {tasks.length} tasks · {habitsDone} of {todayHabits.length} habits</div>
             </div>
             {(scoreQ.data ?? 0) > 0 && (
               <div className="text-center">
-                <div className="text-2xl font-bold text-accent">{scoreQ.data}</div>
+                <div className="text-2xl font-bold text-accent tabular-nums">
+                  <CountUp value={scoreQ.data ?? 0} />
+                </div>
                 <div className="text-[10px] text-hint tracking-wider">SCORE</div>
               </div>
             )}

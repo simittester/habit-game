@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { Section } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
@@ -11,6 +12,7 @@ import type { Habit, HabitLog } from '../types/db';
 
 export default function HabitsScreen() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
   const habitsQ = useQuery({ queryKey: ['habits'], queryFn: listHabits });
@@ -64,6 +66,8 @@ export default function HabitsScreen() {
                 done={doneSet.has(h.id)}
                 streak={streaks.get(h.id) ?? 0}
                 onToggle={() => toggle.mutate({ id: h.id, done: doneSet.has(h.id) })}
+                onTap={() => navigate(`/habits/${h.id}`)}
+                showChevron
               />
             ))}
           </div>
