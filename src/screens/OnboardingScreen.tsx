@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ChevronRight, Sparkles, Flame, Target, Sun } from 'lucide-react';
+import { ChevronRight, Sparkles, Flame, Target, Sun, Check } from 'lucide-react';
 import { createHabit } from '../api/habits';
 import { createProject } from '../api/structure';
 import { createTask } from '../api/tasks';
@@ -127,18 +127,30 @@ function ValueCard({ emoji, title, hint }: { emoji: string; title: string; hint:
 
 function HabitStep({ onNext }: { onNext: () => void }) {
   const qc = useQueryClient();
-  const [pickedIdx, setPickedIdx] = useState<number | null>(null);
+  const [pickedIdxs, setPickedIdxs] = useState<Set<number>>(new Set());
   const [customName, setCustomName] = useState('');
-  const [freq, setFreq] = useState<Frequency>('daily');
+  const [customFreq, setCustomFreq] = useState<Frequency>('daily');
+
+  const togglePick = (i: number) => {
+    tg.selection();
+    setPickedIdxs((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i); else next.add(i);
+      return next;
+    });
+  };
 
   const m = useMutation({
     mutationFn: async () => {
-      const sug = pickedIdx !== null ? HABIT_SUGGESTIONS[pickedIdx] : null;
-      const name = sug?.name ?? customName.trim();
-      const emoji = sug?.emoji ?? '🔥';
-      const f = sug?.freq ?? freq;
-      if (!name) return;
-      await createHabit({ name, emoji, frequency: f });
+      const toCreate: Array<{ name: string; emoji: string; frequency: Frequency }> = [];
+      for (const i of pickedIdxs) {
+        const s = HABIT_SUGGESTIONS[i];
+        toCreate.push({ name: s.name, emoji: s.emoji, frequency: s.freq });
+      }
+      const custom = customName.trim();
+      if (custom) toCreate.push({ name: custom, emoji: '🔥', frequency: customFreq });
+      // Create in parallel
+      await Promise.all(toCreate.map((h) => createHabit(h)));
     },
     onSuccess: () => {
       tg.notify('success');
@@ -148,47 +160,56 @@ function HabitStep({ onNext }: { onNext: () => void }) {
     },
   });
 
-  const canContinue = pickedIdx !== null || customName.trim().length > 0;
+  const totalCount = pickedIdxs.size + (customName.trim() ? 1 : 0);
+  const canContinue = totalCount > 0;
 
   return (
     <div className="flex flex-col px-6 pt-2 pb-8 fade-in">
       <div className="flex items-center gap-2 text-accent text-[12px] font-semibold tracking-wider uppercase">
-        <Flame size={14} /> Step 1 · Habit
+        <Flame size={14} /> Step 1 · Habits
       </div>
-      <h1 className="text-[26px] font-bold leading-tight mt-2">What's one habit you want to build?</h1>
-      <p className="text-[14px] text-hint mt-1">Pick one. You can change or add more later.</p>
+      <h1 className="text-[26px] font-bold leading-tight mt-2">Which habits do you want to build?</h1>
+      <p className="text-[14px] text-hint mt-1">Pick as many as you like — start with 1–3 for best odds.</p>
 
       <div className="grid grid-cols-1 gap-2 mt-5">
-        {HABIT_SUGGESTIONS.map((s, i) => (
-          <button
-            key={i}
-            onClick={() => { tg.selection(); setPickedIdx(i); setCustomName(''); }}
-            className={`flex items-center gap-3 p-3 rounded-2xl text-left transition active:scale-[0.98] ${pickedIdx === i ? 'bg-accent/15 ring-2 ring-accent' : 'bg-bg-2'}`}
-          >
-            <div className="text-2xl shrink-0">{s.emoji}</div>
-            <div className="flex-1">
-              <div className="text-[15px] font-medium">{s.name}</div>
-              <div className="text-[11px] text-hint capitalize">{s.freq}</div>
-            </div>
-          </button>
-        ))}
+        {HABIT_SUGGESTIONS.map((s, i) => {
+          const selected = pickedIdxs.has(i);
+          return (
+            <button
+              key={i}
+              onClick={() => togglePick(i)}
+              className={`flex items-center gap-3 p-3 rounded-2xl text-left transition active:scale-[0.98] ${selected ? 'bg-accent/15 ring-2 ring-accent' : 'bg-bg-2'}`}
+            >
+              <div className="text-2xl shrink-0">{s.emoji}</div>
+              <div className="flex-1">
+                <div className="text-[15px] font-medium">{s.name}</div>
+                <div className="text-[11px] text-hint capitalize">{s.freq}</div>
+              </div>
+              <div
+                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition shrink-0 ${selected ? 'bg-accent border-accent' : 'border-white/25'}`}
+              >
+                {selected && <Check size={14} className="text-white" strokeWidth={3} />}
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       <div className="mt-5">
-        <div className="text-[11px] text-hint tracking-wider uppercase mb-2">Or write your own</div>
+        <div className="text-[11px] text-hint tracking-wider uppercase mb-2">Add your own</div>
         <input
           value={customName}
-          onChange={(e) => { setCustomName(e.target.value); if (e.target.value) setPickedIdx(null); }}
+          onChange={(e) => setCustomName(e.target.value)}
           placeholder="Habit name…"
           className="w-full bg-bg-3 rounded-2xl px-4 py-3 text-[15px] outline-none focus:ring-2 focus:ring-accent"
         />
-        {pickedIdx === null && customName && (
+        {customName && (
           <div className="flex gap-2 mt-3">
             {(['daily', 'weekdays', 'weekends'] as Frequency[]).map((f) => (
               <button
                 key={f}
-                onClick={() => { tg.selection(); setFreq(f); }}
-                className={`flex-1 py-2 rounded-full text-[13px] capitalize ${freq === f ? 'bg-accent text-white' : 'bg-bg-3'}`}
+                onClick={() => { tg.selection(); setCustomFreq(f); }}
+                className={`flex-1 py-2 rounded-full text-[13px] capitalize ${customFreq === f ? 'bg-accent text-white' : 'bg-bg-3'}`}
               >
                 {f}
               </button>
@@ -202,7 +223,11 @@ function HabitStep({ onNext }: { onNext: () => void }) {
         disabled={!canContinue || m.isPending}
         className="mt-6 w-full py-4 rounded-full bg-accent text-white font-semibold text-[16px] flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 transition"
       >
-        {m.isPending ? 'Saving…' : <>Continue <ChevronRight size={18} /></>}
+        {m.isPending
+          ? 'Saving…'
+          : totalCount > 0
+            ? <>Add {totalCount} habit{totalCount === 1 ? '' : 's'} <ChevronRight size={18} /></>
+            : <>Continue <ChevronRight size={18} /></>}
       </button>
     </div>
   );
