@@ -3,22 +3,29 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Section, Card } from '../components/Card';
 import { ScoreGauge } from '../components/ProgressRing';
+import { CalendarMonth } from '../components/CalendarMonth';
 import { GlobalAddButton } from '../components/AddSheet';
 import { fetchSummary, fetchScoreFor } from '../api/daily';
 import { todayIso } from '../lib/dates';
-import { format } from 'date-fns';
+import { format, isSameMonth, startOfMonth } from 'date-fns';
+import { tg } from '../lib/telegram';
 import type { DailySummary } from '../types/db';
 
 type Range = 7 | 14 | 30 | 60;
 
 export default function ProgressScreen() {
   const [range, setRange] = useState<Range>(7);
+  const [calMonth, setCalMonth] = useState(startOfMonth(new Date()));
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const navigate = useNavigate();
 
-  const summaryQ = useQuery({ queryKey: ['summary', range], queryFn: () => fetchSummary(range) });
+  // Always pull 60 days so calendar has data
+  const summaryQ = useQuery({ queryKey: ['summary', 60], queryFn: () => fetchSummary(60) });
   const scoreQ = useQuery({ queryKey: ['score', todayIso()], queryFn: () => fetchScoreFor(todayIso()) });
 
-  const rows = (summaryQ.data ?? []) as DailySummary[];
+  const allRows = (summaryQ.data ?? []) as DailySummary[];
+  // Slice to the selected range for stat aggregation
+  const rows = allRows.slice(Math.max(0, allRows.length - range));
 
   const totals = rows.reduce(
     (acc, r) => ({
@@ -48,11 +55,18 @@ export default function ProgressScreen() {
   const score = scoreQ.data ?? 0;
   const scoreStatus = score >= 70 ? 'Strong' : score >= 40 ? 'Steady' : 'Needs reset';
 
+  // Stats for the selected day in Month view
+  const selectedDayStats = selectedDay
+    ? allRows.find((r) => r.day === format(selectedDay, 'yyyy-MM-dd'))
+    : null;
+
+  const showCalendar = range === 60;
+
   return (
     <div className="pb-6">
       <Section title="Progress">
         <h1 className="text-[28px] font-bold leading-tight">Your life at a glance</h1>
-        <div className="text-[14px] text-hint">Last {range} days</div>
+        <div className="text-[14px] text-hint">{range === 60 ? format(calMonth, 'MMMM yyyy') : `Last ${range} days`}</div>
       </Section>
 
       <div className="px-4 mb-4">
@@ -60,7 +74,7 @@ export default function ProgressScreen() {
           {[7, 14, 30, 60].map((d) => (
             <button
               key={d}
-              onClick={() => setRange(d as Range)}
+              onClick={() => { tg.selection(); setRange(d as Range); setSelectedDay(null); }}
               className={`flex-1 py-2 rounded-full text-[13px] font-medium transition ${
                 range === d ? 'bg-bg-4 text-text' : 'text-hint'
               }`}
@@ -84,12 +98,46 @@ export default function ProgressScreen() {
         </Card>
       </Section>
 
+      {showCalendar && (
+        <Section title="">
+          <Card>
+            <CalendarMonth
+              summaries={allRows}
+              month={calMonth}
+              onMonthChange={(d) => { setCalMonth(d); setSelectedDay(null); }}
+              onDayTap={(d) => setSelectedDay(d)}
+              selectedDay={selectedDay}
+            />
+
+            {selectedDay && selectedDayStats && (
+              <div className="mt-4 pt-4 border-t border-divider">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-[14px] font-semibold">{format(selectedDay, 'EEE, MMM d')}</div>
+                  <button onClick={() => setSelectedDay(null)} className="text-accent text-[12px] active:opacity-60">Close</button>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <DayStat label="Habits" value={`${selectedDayStats.habits_done}/${selectedDayStats.habits_planned}`} />
+                  <DayStat label="Tasks" value={`${selectedDayStats.tasks_done}/${selectedDayStats.tasks_total}`} />
+                  <DayStat label="Water" value={`${selectedDayStats.water_glasses}/${selectedDayStats.water_target}`} />
+                </div>
+              </div>
+            )}
+            {selectedDay && !selectedDayStats && (
+              <div className="mt-4 pt-4 border-t border-divider text-center">
+                <div className="text-[14px] font-semibold mb-1">{format(selectedDay, 'EEE, MMM d')}</div>
+                <div className="text-[12px] text-hint">{isSameMonth(selectedDay, new Date()) ? 'No activity logged that day.' : 'Older than 60 days — data not stored.'}</div>
+              </div>
+            )}
+          </Card>
+        </Section>
+      )}
+
       <Section title="">
         <Card>
           <div className="flex items-center gap-3">
             <ScoreGauge score={score} />
             <div className="flex-1">
-              <div className="text-[11px] tracking-wider text-hint uppercase">Last {range} days</div>
+              <div className="text-[11px] tracking-wider text-hint uppercase">Last {range === 60 ? 'month' : `${range} days`}</div>
               <div className="text-[18px] font-bold">{scoreStatus}</div>
               <div className="text-[13px] text-hint mt-1">
                 Weekly review {score >= 50 ? 'looking good' : 'is missing. Add it to make progress visible.'}
@@ -127,6 +175,15 @@ export default function ProgressScreen() {
       </Section>
 
       <GlobalAddButton />
+    </div>
+  );
+}
+
+function DayStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-bg-3 rounded-xl py-2">
+      <div className="text-[10px] tracking-wider text-hint uppercase">{label}</div>
+      <div className="text-[14px] font-semibold tabular-nums">{value}</div>
     </div>
   );
 }
