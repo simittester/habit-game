@@ -10,6 +10,7 @@ import HabitsScreen from './screens/HabitsScreen';
 import ProgressScreen from './screens/ProgressScreen';
 import MoreScreen from './screens/MoreScreen';
 import ProjectsScreen from './screens/ProjectsScreen';
+import ProjectDetailScreen from './screens/ProjectDetailScreen';
 import AreasScreen from './screens/AreasScreen';
 import RitualsScreen from './screens/RitualsScreen';
 import HealthScreen from './screens/HealthScreen';
@@ -57,6 +58,7 @@ export default function App() {
           <Route path="/progress" element={<ProgressScreen />} />
           <Route path="/more" element={<MoreScreen profile={auth.profile} />} />
           <Route path="/more/projects" element={<ProjectsScreen />} />
+          <Route path="/more/projects/:id" element={<ProjectDetailScreen />} />
           <Route path="/more/areas" element={<AreasScreen />} />
           <Route path="/more/rituals" element={<RitualsScreen />} />
           <Route path="/more/health" element={<HealthScreen />} />
