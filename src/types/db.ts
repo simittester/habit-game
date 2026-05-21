@@ -171,7 +171,19 @@ export interface UserSettings {
   daily_focus_count: number;
   notifications: Record<string, unknown>;
   onboarded_at: string | null;
+  height_cm: number | null;
+  weight_unit: 'kg' | 'lb';
+  target_weight_kg: number | null;
   updated_at: string;
+}
+
+export interface WeightLog {
+  id: string;
+  user_id: string;
+  log_date: string;
+  weight_kg: number;
+  note: string | null;
+  created_at: string;
 }
 
 export interface DailySummary {
