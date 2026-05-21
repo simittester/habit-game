@@ -20,7 +20,6 @@ import AreasScreen from './screens/AreasScreen';
 import RitualsScreen from './screens/RitualsScreen';
 import HealthScreen from './screens/HealthScreen';
 import MoneyScreen from './screens/MoneyScreen';
-import ReviewsScreen from './screens/ReviewsScreen';
 import DailyPlansScreen from './screens/DailyPlansScreen';
 import CapturesScreen from './screens/CapturesScreen';
 import ActivityScreen from './screens/ActivityScreen';
@@ -83,7 +82,6 @@ export default function App() {
           <Route path="/more/rituals" element={<RitualsScreen />} />
           <Route path="/more/health" element={<HealthScreen />} />
           <Route path="/more/money" element={<MoneyScreen />} />
-          <Route path="/more/reviews" element={<ReviewsScreen />} />
           <Route path="/more/daily-plans" element={<DailyPlansScreen />} />
           <Route path="/more/captures" element={<CapturesScreen />} />
           <Route path="/more/activity" element={<ActivityScreen />} />

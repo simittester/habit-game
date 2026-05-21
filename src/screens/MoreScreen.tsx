@@ -10,11 +10,10 @@ interface Item { to: string; emoji: string; title: string; hint: string }
 const ITEMS: Item[] = [
   { to: '/more/projects', emoji: '📁', title: 'Projects', hint: 'Track bigger outcomes' },
   { to: '/more/areas', emoji: '🗂️', title: 'Areas', hint: 'Balance life domains' },
-  { to: '/more/rituals', emoji: '🔁', title: 'Rituals', hint: 'Weekly review and shutdown' },
-  { to: '/more/health', emoji: '🩺', title: 'Health', hint: 'Sleep, water, weight, meals' },
+  { to: '/more/rituals', emoji: '🔁', title: 'Rituals', hint: 'Evening shutdown & weekly review' },
+  { to: '/more/health', emoji: '🩺', title: 'Health', hint: 'Weight, water, meals' },
   { to: '/more/money', emoji: '💵', title: 'Money', hint: 'Expenses & budget' },
   { to: '/more/daily-plans', emoji: '📋', title: 'Daily Plans', hint: 'Plan tomorrow tonight' },
-  { to: '/more/reviews', emoji: '📊', title: 'Reviews', hint: 'Daily & weekly journals' },
   { to: '/more/captures', emoji: '💡', title: 'Captures', hint: 'Ideas waiting for action' },
   { to: '/more/activity', emoji: '⚡', title: 'Activity', hint: 'Everything you logged' },
   { to: '/more/settings', emoji: '⚙️', title: 'Settings', hint: 'Preferences & account' },

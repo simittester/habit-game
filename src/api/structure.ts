@@ -61,12 +61,12 @@ export async function deleteProject(id: string): Promise<void> {
 }
 
 // --- Reviews ---
-export async function listReviews(): Promise<Review[]> {
+export async function listReviews(limit = 100): Promise<Review[]> {
   const { data, error } = await sb()
     .from('reviews')
     .select('*')
     .order('review_date', { ascending: false })
-    .limit(20);
+    .limit(limit);
   if (error) throw error;
   return data as Review[];
 }
