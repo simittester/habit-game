@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Check, Sparkles, X } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Check, X, ExternalLink } from 'lucide-react';
 import { Sheet } from './Sheet';
 import { subscribePaywall } from '../lib/paywall';
 import { useSubscription } from '../hooks/useSubscription';
+import { getCachedProfile } from '../lib/auth';
 import { tg } from '../lib/telegram';
 
-type Tier = 'week' | 'month' | 'year';
+type Tier = 'month' | 'year';
 
 interface PlanCfg {
   tier: Tier;
@@ -13,29 +15,21 @@ interface PlanCfg {
   priceLine: string;
   perDay: string;
   badge?: string;
-  highlight?: boolean;
 }
 
 const PLANS: PlanCfg[] = [
   {
     tier: 'year',
-    label: '12 months',
+    label: 'Annual',
     priceLine: '$59.99 / year',
     perDay: '$0.16 / day',
-    badge: 'Best value',
-    highlight: true,
+    badge: 'Save 50%',
   },
   {
     tier: 'month',
-    label: '1 month',
+    label: 'Monthly',
     priceLine: '$9.99 / month',
     perDay: '$0.33 / day',
-  },
-  {
-    tier: 'week',
-    label: 'Try for $1',
-    priceLine: '$1 / first week, then $9.99 / month',
-    perDay: 'Cancel any time',
   },
 ];
 
@@ -47,14 +41,67 @@ const VALUE_PROPS = [
   { emoji: '🛡️', text: 'Your data stays yours — encrypted, owned by you' },
 ];
 
+const GUMROAD_BASE = 'https://getmomentum.gumroad.com/l/momentum';
+
+function buildCheckoutUrl(tier: Tier, telegramId: number): string {
+  const params = new URLSearchParams({
+    wanted: 'true',
+    recurrence: tier === 'year' ? 'yearly' : 'monthly',
+    telegram_id: String(telegramId),
+  });
+  return `${GUMROAD_BASE}?${params.toString()}`;
+}
+
 export function PaywallSheet() {
   const [open, setOpen] = useState(false);
   const [picked, setPicked] = useState<Tier>('year');
+  const [pollingAfterCheckout, setPollingAfterCheckout] = useState(false);
   const sub = useSubscription();
+  const qc = useQueryClient();
 
   useEffect(() => {
     return subscribePaywall(() => setOpen(true));
   }, []);
+
+  // Poll subscription status for 90s after user is sent to Gumroad
+  useEffect(() => {
+    if (!pollingAfterCheckout) return;
+    const started = Date.now();
+    const interval = setInterval(() => {
+      qc.invalidateQueries({ queryKey: ['settings'] });
+      if (Date.now() - started > 90_000) {
+        setPollingAfterCheckout(false);
+        clearInterval(interval);
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [pollingAfterCheckout, qc]);
+
+  // Auto-close + celebrate when subscription becomes active
+  useEffect(() => {
+    if (sub.status === 'active' && pollingAfterCheckout) {
+      tg.notify('success');
+      setPollingAfterCheckout(false);
+      setOpen(false);
+    }
+  }, [sub.status, pollingAfterCheckout]);
+
+  const handleSubscribe = () => {
+    const profile = getCachedProfile();
+    if (!profile?.telegram_id) {
+      tg.showAlert("Couldn't find your Telegram ID. Try closing and reopening the app.");
+      return;
+    }
+    tg.haptic('medium');
+    const url = buildCheckoutUrl(picked, profile.telegram_id);
+    const w = tg.webApp();
+    if (w && typeof (w as unknown as { openLink?: (u: string) => void }).openLink === 'function') {
+      (w as unknown as { openLink: (u: string) => void }).openLink(url);
+    } else {
+      window.open(url, '_blank');
+    }
+    setPollingAfterCheckout(true);
+  };
 
   const blocking = sub.status === 'expired';
 
@@ -109,31 +156,41 @@ export function PaywallSheet() {
           ))}
         </div>
 
-        <button
-          onClick={() => {
-            tg.haptic('medium');
-            tg.showAlert(
-              `Selected: ${picked}\n\nPayments aren't wired yet — coming soon via Telegram Stars.`,
-            );
-          }}
-          className="mt-5 w-full py-4 rounded-full bg-accent text-white font-semibold flex items-center justify-center gap-2 active:scale-95 transition"
-        >
-          {picked === 'week' ? 'Start $1 week' : `Start ${picked === 'year' ? '12 months' : '1 month'}`}
-          <Sparkles size={18} />
-        </button>
+        {pollingAfterCheckout ? (
+          <div className="mt-5 w-full py-4 rounded-full bg-bg-3 text-text font-semibold text-center flex items-center justify-center gap-2">
+            <div className="w-4 h-4 rounded-full border-2 border-divider border-t-accent spin" />
+            Waiting for payment confirmation…
+          </div>
+        ) : (
+          <button
+            onClick={handleSubscribe}
+            className="mt-5 w-full py-4 rounded-full bg-accent text-white font-semibold flex items-center justify-center gap-2 active:scale-95 transition"
+          >
+            Continue to checkout <ExternalLink size={16} />
+          </button>
+        )}
+
+        <div className="text-[10px] text-hint text-center mt-3 leading-snug">
+          You'll be sent to a secure Gumroad page to complete payment. Then come back to Momentum — your subscription unlocks automatically.
+        </div>
 
         <button
-          onClick={() => { tg.haptic('light'); tg.showAlert('No subscription to restore yet.'); }}
-          className="w-full py-3 mt-1 text-hint text-[13px] active:opacity-60"
+          onClick={() => {
+            tg.haptic('light');
+            qc.invalidateQueries({ queryKey: ['settings'] });
+            tg.showAlert('Refreshing your subscription status…');
+          }}
+          className="w-full py-3 mt-2 text-hint text-[13px] active:opacity-60"
         >
-          Restore purchase
+          I just paid — refresh status
         </button>
 
         <div className="text-[10px] text-hint text-center mt-4 leading-snug">
-          Subscriptions auto-renew until cancelled. Manage in Telegram payments or message
-          <span className="text-accent"> @momentumcore_bot</span> to cancel.
+          Subscriptions auto-renew until cancelled. Cancel any time at <span className="text-accent">getmomentum.gumroad.com/library</span> or message <span className="text-accent">@momentumcore_bot</span>.
           By subscribing you agree to our <a href="/legal/terms.html" target="_blank" rel="noopener noreferrer" className="text-accent">Terms</a> and <a href="/legal/privacy.html" target="_blank" rel="noopener noreferrer" className="text-accent">Privacy Policy</a>.
         </div>
+
+        <div className="h-8" />
       </div>
     </Sheet>
   );
