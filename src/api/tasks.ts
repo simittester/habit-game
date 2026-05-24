@@ -103,3 +103,15 @@ export async function deleteTask(id: string): Promise<void> {
   const { error } = await sb().from('tasks').delete().eq('id', id);
   if (error) throw error;
 }
+
+// Tasks touched in a date range (created OR completed within).
+// Used by Progress to break down completions by priority/area/project.
+export async function listTasksInRange(startIso: string, endIso: string): Promise<Task[]> {
+  const { data, error } = await sb()
+    .from('tasks')
+    .select('*')
+    .or(`and(created_at.gte.${startIso},created_at.lte.${endIso}T23:59:59),and(completed_at.gte.${startIso},completed_at.lte.${endIso}T23:59:59),and(scheduled_for.gte.${startIso},scheduled_for.lte.${endIso})`)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data as Task[];
+}

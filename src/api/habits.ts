@@ -119,6 +119,21 @@ export async function listHabitStreaks(): Promise<Map<string, number>> {
   return map;
 }
 
+/**
+ * All habit logs across all habits in the given range.
+ * Used by Progress to build the activity grid + best/worst habit + daily rate.
+ */
+export async function listAllHabitLogsInRange(startIso: string, endIso: string): Promise<HabitLog[]> {
+  const { data, error } = await sb()
+    .from('habit_logs')
+    .select('*')
+    .gte('log_date', startIso)
+    .lte('log_date', endIso)
+    .order('log_date', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as HabitLog[];
+}
+
 export function isHabitDueToday(h: Habit, date = new Date()): boolean {
   const dow = date.getDay(); // 0..6 Sun..Sat
   const isoDow = dow === 0 ? 7 : dow; // 1..7 Mon..Sun

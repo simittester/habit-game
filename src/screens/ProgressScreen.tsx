@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Section, Card } from '../components/Card';
 import { ScoreGauge } from '../components/ProgressRing';
@@ -7,9 +7,19 @@ import { CalendarMonth } from '../components/CalendarMonth';
 import { GlobalAddButton } from '../components/AddSheet';
 import { fetchSummary, fetchScoreFor } from '../api/daily';
 import { todayIso } from '../lib/dates';
-import { format, isSameMonth, startOfMonth, endOfMonth } from 'date-fns';
+import { format, isSameMonth, startOfMonth, endOfMonth, subDays } from 'date-fns';
 import { tg } from '../lib/telegram';
 import type { DailySummary } from '../types/db';
+
+import { TasksPanel } from '../components/progress/TasksPanel';
+import { HabitsPanel } from '../components/progress/HabitsPanel';
+import { HealthPanel } from '../components/progress/HealthPanel';
+import { MoneyPanel } from '../components/progress/MoneyPanel';
+import { DailyPlansPanel } from '../components/progress/DailyPlansPanel';
+import { ProjectsAreasPanel } from '../components/progress/ProjectsAreasPanel';
+import { CapturesPanel } from '../components/progress/CapturesPanel';
+import { ReviewsPanel } from '../components/progress/ReviewsPanel';
+import { ActivityPanel } from '../components/progress/ActivityPanel';
 
 type Range = 7 | 14 | 'month';
 
@@ -25,21 +35,37 @@ export default function ProgressScreen() {
 
   const allRows = (summaryQ.data ?? []) as DailySummary[];
 
-  // Pick rows for the active range:
-  // - 7/14: last N days (rolling window)
-  // - month: the calendar month that's currently being viewed
-  const rows: DailySummary[] = range === 'month'
-    ? (() => {
-        const startIso = format(startOfMonth(calMonth), 'yyyy-MM-dd');
-        const endIso = format(endOfMonth(calMonth), 'yyyy-MM-dd');
-        return allRows.filter((r) => r.day >= startIso && r.day <= endIso);
-      })()
-    : allRows.slice(Math.max(0, allRows.length - (range as number)));
-
-  // Denominator for activity stats
-  const rangeDays = range === 'month'
-    ? Math.min(rows.length || endOfMonth(calMonth).getDate(), endOfMonth(calMonth).getDate())
-    : (range as number);
+  // Compute the actual date range based on the selected mode
+  const { rows, startDate, endDate, rangeDays, rangeLabel } = useMemo(() => {
+    if (range === 'month') {
+      const start = startOfMonth(calMonth);
+      const end = endOfMonth(calMonth);
+      const startIso = format(start, 'yyyy-MM-dd');
+      const endIso = format(end, 'yyyy-MM-dd');
+      const filteredRows = allRows.filter((r) => r.day >= startIso && r.day <= endIso);
+      const today = new Date();
+      const actualEnd = end > today ? today : end;
+      return {
+        rows: filteredRows,
+        startDate: start,
+        endDate: actualEnd,
+        rangeDays: end.getDate(),
+        rangeLabel: format(calMonth, 'MMMM yyyy'),
+      };
+    }
+    const days = range as number;
+    const end = new Date();
+    const start = subDays(end, days - 1);
+    const startIso = format(start, 'yyyy-MM-dd');
+    const filteredRows = allRows.filter((r) => r.day >= startIso);
+    return {
+      rows: filteredRows,
+      startDate: start,
+      endDate: end,
+      rangeDays: days,
+      rangeLabel: `Last ${days} days`,
+    };
+  }, [range, calMonth, allRows]);
 
   const totals = rows.reduce(
     (acc, r) => ({
@@ -47,13 +73,10 @@ export default function ProgressScreen() {
       tasksTotal: acc.tasksTotal + r.tasks_total,
       habitsDone: acc.habitsDone + r.habits_done,
       habitsPlanned: acc.habitsPlanned + r.habits_planned,
-      water: acc.water + r.water_glasses,
-      meals: acc.meals + r.meals_logged,
       expenses: acc.expenses + Number(r.expenses_total),
-      blocksDone: acc.blocksDone + r.blocks_done,
       activeDays: acc.activeDays + (r.tasks_done + r.habits_done + r.blocks_done > 0 ? 1 : 0),
     }),
-    { tasksDone: 0, tasksTotal: 0, habitsDone: 0, habitsPlanned: 0, water: 0, meals: 0, expenses: 0, blocksDone: 0, activeDays: 0 },
+    { tasksDone: 0, tasksTotal: 0, habitsDone: 0, habitsPlanned: 0, expenses: 0, activeDays: 0 },
   );
 
   const habitRate = totals.habitsPlanned === 0 ? 0 : Math.round((totals.habitsDone / totals.habitsPlanned) * 100);
@@ -69,14 +92,11 @@ export default function ProgressScreen() {
   const score = scoreQ.data ?? 0;
   const scoreStatus = score >= 70 ? 'Strong' : score >= 40 ? 'Steady' : 'Needs reset';
 
-  // Stats for the selected day in Month view
   const selectedDayStats = selectedDay
     ? allRows.find((r) => r.day === format(selectedDay, 'yyyy-MM-dd'))
     : null;
 
   const showCalendar = range === 'month';
-
-  const rangeLabel = range === 'month' ? format(calMonth, 'MMMM yyyy') : `Last ${range} days`;
 
   return (
     <div className="pb-6">
@@ -156,10 +176,10 @@ export default function ProgressScreen() {
               <div className="text-[11px] tracking-wider text-hint uppercase">{rangeLabel}</div>
               <div className="text-[18px] font-bold">{scoreStatus}</div>
               <div className="text-[13px] text-hint mt-1">
-                Weekly review {score >= 50 ? 'looking good' : 'is missing. Add it to make progress visible.'}
+                {score >= 70 ? 'Strong week so far. Keep the streak honest.' : score >= 40 ? 'Steady. A weekly review will lock the rhythm.' : 'Reset with one habit and one task.'}
               </div>
               <div className="grid grid-cols-2 mt-2 gap-2 text-[12px]">
-                <div><div className="text-hint">Active days</div><div className="text-text font-semibold">{totals.activeDays} / {rangeDays}</div></div>
+                <div><div className="text-hint">Active days</div><div className="text-text font-semibold tabular-nums">{totals.activeDays} / {rangeDays}</div></div>
                 {bestDay && (
                   <div><div className="text-hint">Best day</div><div className="text-green-400 font-semibold">{format(new Date(bestDay.day), 'EEE, MMM d')}</div></div>
                 )}
@@ -173,21 +193,21 @@ export default function ProgressScreen() {
         <div className="grid grid-cols-2 gap-3">
           <StatCard emoji="✅" label="TASKS DONE" value={String(totals.tasksDone)} hint={`${taskRate}% rate`} />
           <StatCard emoji="🔥" label="HABIT RATE" value={`${habitRate}%`} hint={`${totals.habitsDone} logged`} />
-          <StatCard emoji="💰" label="BALANCE" value={`-$${totals.expenses.toFixed(0)}`} hint={`$${totals.expenses.toFixed(0)} spent`} color={totals.expenses > 0 ? 'text-red-400' : 'text-green-400'} />
-          <StatCard emoji="📅" label="DAYS PLANNED" value={String(totals.activeDays)} hint={`of ${rangeDays} days`} />
+          <StatCard emoji="💰" label="SPENT" value={`-$${totals.expenses.toFixed(0)}`} hint={`${totals.expenses > 0 ? `${rows.length} days` : 'nothing logged'}`} color={totals.expenses > 0 ? 'text-red-400' : 'text-green-400'} />
+          <StatCard emoji="📅" label="DAYS ACTIVE" value={String(totals.activeDays)} hint={`of ${rangeDays} days`} />
         </div>
       </Section>
 
-      <Section title="">
-        <CollapseSection emoji="✅" title="Tasks" empty={totals.tasksTotal === 0 ? 'No tasks tracked yet. Plan one task today to start seeing progress here.' : `${totals.tasksDone} / ${totals.tasksTotal} completed.`} />
-        <CollapseSection emoji="🔥" title="Habits" empty={totals.habitsPlanned === 0 ? 'No habits added yet. Add one tiny habit to start building consistency.' : `${totals.habitsDone} / ${totals.habitsPlanned} habits logged.`} />
-        <CollapseSection emoji="❤️" title="Health" empty={`${totals.water} glasses · ${totals.meals} meals logged.`} />
-        <CollapseSection emoji="💵" title="Money" empty={`$${totals.expenses.toFixed(2)} spent ${range === 'month' ? `in ${format(calMonth, 'MMMM')}` : `in last ${range} days`}.`} />
-        <CollapseSection emoji="📋" title="Daily Plans" empty={`${totals.blocksDone} blocks completed.`} />
-        <CollapseSection emoji="📁" title="Projects & Areas" empty="Tap More → Projects to set up." />
-        <CollapseSection emoji="💡" title="Captures" empty="Inbox lives in the Inbox tab." />
-        <CollapseSection emoji="📊" title="Reviews" empty="No reviews yet." />
-        <CollapseSection emoji="⚡" title="Activity" empty="See More → Activity for the full feed." />
+      <Section title="Breakdowns">
+        <TasksPanel rows={rows} startDate={startDate} endDate={endDate} />
+        <HabitsPanel rows={rows} startDate={startDate} endDate={endDate} />
+        <HealthPanel rows={rows} startDate={startDate} endDate={endDate} />
+        <MoneyPanel startDate={startDate} endDate={endDate} />
+        <DailyPlansPanel rows={rows} startDate={startDate} />
+        <ProjectsAreasPanel />
+        <CapturesPanel startDate={startDate} endDate={endDate} />
+        <ReviewsPanel startDate={startDate} />
+        <ActivityPanel rows={rows} startDate={startDate} endDate={endDate} />
       </Section>
 
       <GlobalAddButton />
@@ -214,21 +234,5 @@ function StatCard({ emoji, label, value, hint, color }: { emoji: string; label: 
       <div className={`text-2xl font-bold ${color ?? ''}`}>{value}</div>
       <div className="text-[12px] text-hint mt-0.5">{hint}</div>
     </Card>
-  );
-}
-
-function CollapseSection({ emoji, title, empty }: { emoji: string; title: string; empty: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="bg-bg-2 rounded-2xl mb-2">
-      <button onClick={() => setOpen((v) => !v)} className="w-full flex items-center px-4 py-3 text-left">
-        <div className="text-lg mr-2">{emoji}</div>
-        <div className="flex-1 font-semibold">{title}</div>
-        <div className="text-hint">{open ? '▴' : '▾'}</div>
-      </button>
-      {open && (
-        <div className="px-4 pb-4 pt-1 text-[14px] text-hint">{empty}</div>
-      )}
-    </div>
   );
 }
