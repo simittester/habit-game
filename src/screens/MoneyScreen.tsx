@@ -7,6 +7,7 @@ import { TextField } from '../components/Input';
 import { listRecentExpenses, addExpense, deleteExpense } from '../api/daily';
 import { format } from 'date-fns';
 import { tg } from '../lib/telegram';
+import { useGate } from '../hooks/useGate';
 import type { Expense } from '../types/db';
 
 const CATEGORIES = [
@@ -24,6 +25,7 @@ export default function MoneyScreen() {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('food');
   const [note, setNote] = useState('');
+  const { gate } = useGate();
 
   const q = useQuery({ queryKey: ['expenses', 'recent'], queryFn: () => listRecentExpenses(30) });
 
@@ -50,7 +52,7 @@ export default function MoneyScreen() {
             <h1 className="text-[28px] font-bold leading-tight">Money</h1>
             <div className="text-[14px] text-hint">Expenses last 30 days.</div>
           </div>
-          <button onClick={() => setOpen(true)} className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center active:scale-95">
+          <button onClick={gate(() => setOpen(true))} className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center active:scale-95">
             <Plus size={20} />
           </button>
         </div>
@@ -77,7 +79,7 @@ export default function MoneyScreen() {
                   <div className="text-[12px] text-hint">{format(new Date(e.log_date), 'MMM d')} · {e.category}</div>
                 </div>
                 <div className="text-[15px] font-semibold text-red-400">-${Number(e.amount).toFixed(2)}</div>
-                <button onClick={() => delM.mutate(e.id)} className="text-hint p-1"><Trash2 size={14} /></button>
+                <button onClick={gate(() => delM.mutate(e.id))} className="text-hint p-1"><Trash2 size={14} /></button>
               </div>
             ))}
           </div>

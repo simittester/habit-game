@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Check, Star } from 'lucide-react';
 import clsx from 'clsx';
 import { tg } from '../lib/telegram';
+import { useGate } from '../hooks/useGate';
 import type { Task } from '../types/db';
 
 interface Props {
@@ -14,6 +15,7 @@ export function TaskRow({ task, onToggle, onClick }: Props) {
   const done = task.status === 'done';
   const [popKey, setPopKey] = useState(0);
   const [justCompleted, setJustCompleted] = useState(false);
+  const { gate } = useGate();
 
   useEffect(() => {
     if (!done) {
@@ -22,7 +24,7 @@ export function TaskRow({ task, onToggle, onClick }: Props) {
     }
   }, [done]);
 
-  const handleToggle = () => {
+  const handleToggle = gate(() => {
     tg.haptic(done ? 'light' : 'medium');
     setPopKey((k) => k + 1);
     if (!done) {
@@ -30,7 +32,7 @@ export function TaskRow({ task, onToggle, onClick }: Props) {
       setTimeout(() => setJustCompleted(false), 600);
     }
     onToggle();
-  };
+  });
 
   return (
     <div className={clsx(

@@ -9,6 +9,7 @@ import { dailyStreak, weeklyStreak, lastReviewDaysAgo } from '../lib/ritualStrea
 import { todayIso } from '../lib/dates';
 import { format, startOfWeek, endOfWeek, subDays } from 'date-fns';
 import { tg } from '../lib/telegram';
+import { useGate } from '../hooks/useGate';
 import type { Review, DailySummary } from '../types/db';
 
 type Tab = 'evening' | 'weekly' | 'history';
@@ -63,6 +64,7 @@ export default function RitualsScreen() {
   const [tab, setTab] = useState<Tab>('evening');
   const [eveningOpen, setEveningOpen] = useState(false);
   const [weeklyOpen, setWeeklyOpen] = useState(false);
+  const { gate } = useGate();
 
   const reviewsQ = useQuery({ queryKey: ['reviews'], queryFn: () => listReviews(100) });
   const summaryQ = useQuery({ queryKey: ['summary', 7], queryFn: () => fetchSummary(7) });
@@ -98,7 +100,7 @@ export default function RitualsScreen() {
           today={today ?? null}
           streak={eStreak}
           daysSince={eDaysSince}
-          onStart={() => { tg.haptic('medium'); setEveningOpen(true); }}
+          onStart={gate(() => { tg.haptic('medium'); setEveningOpen(true); })}
         />
       )}
 
@@ -107,7 +109,7 @@ export default function RitualsScreen() {
           week={week}
           streak={wStreak}
           daysSince={wDaysSince}
-          onStart={() => { tg.haptic('medium'); setWeeklyOpen(true); }}
+          onStart={gate(() => { tg.haptic('medium'); setWeeklyOpen(true); })}
         />
       )}
 

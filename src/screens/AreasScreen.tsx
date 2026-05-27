@@ -7,6 +7,7 @@ import { Sheet } from '../components/Sheet';
 import { TextField } from '../components/Input';
 import { listAreas, createArea, deleteArea } from '../api/structure';
 import { tg } from '../lib/telegram';
+import { useGate } from '../hooks/useGate';
 import type { Area } from '../types/db';
 
 const EMOJIS = ['📁', '❤️', '💼', '💰', '🧠', '🏠', '🏃', '👨‍👩‍👧', '🎨', '✈️'];
@@ -16,6 +17,7 @@ export default function AreasScreen() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('📁');
+  const { gate } = useGate();
 
   const q = useQuery({ queryKey: ['areas'], queryFn: listAreas });
 
@@ -35,7 +37,7 @@ export default function AreasScreen() {
             <h1 className="text-[28px] font-bold leading-tight">Areas</h1>
             <div className="text-[14px] text-hint">The big buckets of your life. Group projects, habits, and tasks under them.</div>
           </div>
-          <button onClick={() => setOpen(true)} className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center active:scale-95">
+          <button onClick={gate(() => setOpen(true))} className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center active:scale-95">
             <Plus size={20} />
           </button>
         </div>
@@ -53,7 +55,7 @@ export default function AreasScreen() {
             <div key={a.id} className="bg-bg-2 rounded-2xl p-4">
               <div className="text-2xl mb-2">{a.emoji}</div>
               <div className="font-semibold text-[15px]">{a.name}</div>
-              <button onClick={async () => { if (await tg.showConfirm('Delete area?')) delM.mutate(a.id); }} className="text-hint text-[11px] mt-2">Delete</button>
+              <button onClick={gate(async () => { if (await tg.showConfirm('Delete area?')) delM.mutate(a.id); })} className="text-hint text-[11px] mt-2">Delete</button>
             </div>
           ))}
         </div>

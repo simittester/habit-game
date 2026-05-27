@@ -9,6 +9,7 @@ import { TextField, TextArea } from '../components/Input';
 import { listProjects, createProject } from '../api/structure';
 import { projectTaskCounts } from '../api/tasks';
 import { tg } from '../lib/telegram';
+import { useGate } from '../hooks/useGate';
 import type { Project } from '../types/db';
 
 const EMOJIS = ['📂', '🎯', '🚀', '💡', '📚', '💪', '🏗️', '🎨', '💼', '🏃'];
@@ -16,6 +17,7 @@ const EMOJIS = ['📂', '🎯', '🚀', '💡', '📚', '💪', '🏗️', '🎨
 export default function ProjectsScreen() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const { gate } = useGate();
 
   const projectsQ = useQuery({ queryKey: ['projects'], queryFn: listProjects });
   const countsQ = useQuery({ queryKey: ['project-counts'], queryFn: projectTaskCounts });
@@ -32,7 +34,7 @@ export default function ProjectsScreen() {
             <div className="text-[14px] text-hint">Goals with an end. Break each one into tasks underneath.</div>
           </div>
           <button
-            onClick={() => { tg.haptic('medium'); setOpen(true); }}
+            onClick={gate(() => { tg.haptic('medium'); setOpen(true); })}
             className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center active:scale-95"
           >
             <Plus size={20} />

@@ -14,12 +14,14 @@ import {
   listArchivedHabits,
 } from '../api/habits';
 import { tg } from '../lib/telegram';
+import { useGate } from '../hooks/useGate';
 import type { Habit, HabitLog } from '../types/db';
 
 export default function HabitsScreen() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const { gate } = useGate();
 
   const habitsQ = useQuery({ queryKey: ['habits'], queryFn: listHabits });
   const logsQ = useQuery({ queryKey: ['today', 'habit-logs'], queryFn: listTodayLogs });
@@ -49,7 +51,7 @@ export default function HabitsScreen() {
             <div className="text-[14px] text-hint">Build consistency, one day at a time.</div>
           </div>
           <button
-            onClick={() => { tg.haptic('medium'); setOpen(true); }}
+            onClick={gate(() => { tg.haptic('medium'); setOpen(true); })}
             className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center active:scale-95"
           >
             <Plus size={20} />
@@ -62,7 +64,7 @@ export default function HabitsScreen() {
           emoji="🔥"
           title="No habits yet."
           hint="Small actions, done daily, compound into everything."
-          action={<button onClick={() => setOpen(true)} className="px-5 py-2.5 rounded-full bg-accent text-white text-sm font-semibold">Add your first habit</button>}
+          action={<button onClick={gate(() => setOpen(true))} className="px-5 py-2.5 rounded-full bg-accent text-white text-sm font-semibold">Add your first habit</button>}
         />
       ) : (
         <div className="px-4">

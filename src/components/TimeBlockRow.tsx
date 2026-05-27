@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react';
 import clsx from 'clsx';
 import { tg } from '../lib/telegram';
+import { useGate } from '../hooks/useGate';
 import type { TimeBlock } from '../types/db';
 
 interface Props {
@@ -10,9 +11,10 @@ interface Props {
 
 export function TimeBlockRow({ block, onToggle }: Props) {
   const hhmm = block.start_time?.slice(0, 5);
+  const { gate } = useGate();
   return (
     <button
-      onClick={() => { tg.haptic('light'); onToggle(); }}
+      onClick={gate(() => { tg.haptic('light'); onToggle(); })}
       className="w-full flex items-center gap-3 px-3 py-3 bg-bg-2 first:rounded-t-2xl last:rounded-b-2xl active:opacity-70 transition border-b border-divider last:border-b-0"
     >
       <div

@@ -22,6 +22,7 @@ import { listBlocksForDate, toggleBlock } from '../api/timeblocks';
 import { getWaterToday, setWater, fetchScoreFor, listMealsForDate } from '../api/daily';
 import { todayIso, longDate } from '../lib/dates';
 import { tg } from '../lib/telegram';
+import { useGate } from '../hooks/useGate';
 import type { Profile } from '../lib/auth';
 import type { Habit, HabitLog, Task, TimeBlock } from '../types/db';
 
@@ -35,6 +36,7 @@ export default function TodayScreen({ profile }: Props) {
   const [blockOpen, setBlockOpen] = useState(false);
   const [mealOpen, setMealOpen] = useState(false);
   const [expenseOpen, setExpenseOpen] = useState(false);
+  const { gate } = useGate();
 
   const habitsQ = useQuery({ queryKey: ['habits'], queryFn: listHabits });
   const todayLogsQ = useQuery({ queryKey: ['today', 'habit-logs'], queryFn: listTodayLogs });
@@ -144,21 +146,21 @@ export default function TodayScreen({ profile }: Props) {
             emoji="💧"
             title={waterDone ? 'Water' : 'Water +1'}
             hint={`${waterGlasses}/${waterTarget} glasses`}
-            onClick={() => waterPlus.mutate()}
+            onClick={gate(() => waterPlus.mutate())}
             done={waterDone}
           />
           <CheckInChip
             emoji="🍽️"
             title="Meal"
             hint={mealsCount === 0 ? 'Log a meal' : `${mealsCount} logged`}
-            onClick={() => setMealOpen(true)}
+            onClick={gate(() => setMealOpen(true))}
             done={mealsCount >= 3}
           />
           <CheckInChip
             emoji="💸"
             title="Expense"
             hint="Quick spend"
-            onClick={() => setExpenseOpen(true)}
+            onClick={gate(() => setExpenseOpen(true))}
           />
           <CheckInChip
             emoji="😴"
@@ -174,13 +176,13 @@ export default function TodayScreen({ profile }: Props) {
           <Card>
             <div className="flex items-center gap-3">
               <div className="flex-1 text-[14px]">Step 1. Add one task that actually matters today.</div>
-              <button onClick={() => setTaskOpen(true)} className="px-4 py-2 rounded-full bg-accent text-white text-[13px] font-semibold">Add task</button>
+              <button onClick={gate(() => setTaskOpen(true))} className="px-4 py-2 rounded-full bg-accent text-white text-[13px] font-semibold">Add task</button>
             </div>
           </Card>
         </Section>
       )}
 
-      <Section title="Top priorities" action={<button onClick={() => setTaskOpen(true)} className="text-accent text-[13px]"><Plus size={14} className="inline -mt-0.5" /> Add</button>}>
+      <Section title="Top priorities" action={<button onClick={gate(() => setTaskOpen(true))} className="text-accent text-[13px]"><Plus size={14} className="inline -mt-0.5" /> Add</button>}>
         {tasks.length === 0 ? (
           <Card><div className="text-hint text-sm text-center py-4">No priorities yet.</div></Card>
         ) : (
@@ -192,10 +194,10 @@ export default function TodayScreen({ profile }: Props) {
         )}
       </Section>
 
-      <Section title="Your day" action={<button onClick={() => setBlockOpen(true)} className="text-accent text-[13px]"><Plus size={14} className="inline -mt-0.5" /> Add</button>}>
+      <Section title="Your day" action={<button onClick={gate(() => setBlockOpen(true))} className="text-accent text-[13px]"><Plus size={14} className="inline -mt-0.5" /> Add</button>}>
         {(blocksQ.data ?? []).length === 0 ? (
           <button
-            onClick={() => setBlockOpen(true)}
+            onClick={gate(() => setBlockOpen(true))}
             className="w-full py-6 rounded-2xl border-2 border-dashed border-divider text-hint text-[13px] hover:border-accent hover:text-accent transition"
           >
             + Add time block
@@ -209,7 +211,7 @@ export default function TodayScreen({ profile }: Props) {
         )}
       </Section>
 
-      <Section title="Habits today" action={<button onClick={() => setHabitOpen(true)} className="text-accent text-[13px]"><Plus size={14} className="inline -mt-0.5" /> Add</button>}>
+      <Section title="Habits today" action={<button onClick={gate(() => setHabitOpen(true))} className="text-accent text-[13px]"><Plus size={14} className="inline -mt-0.5" /> Add</button>}>
         {todayHabits.length === 0 ? (
           <EmptyState emoji="🔥" title="No habits for today" hint="Tap + to build one." />
         ) : (

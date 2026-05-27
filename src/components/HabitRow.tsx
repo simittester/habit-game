@@ -3,6 +3,7 @@ import { Check, Flame, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
 import { tg } from '../lib/telegram';
 import { Confetti } from './Confetti';
+import { useGate } from '../hooks/useGate';
 import type { Habit } from '../types/db';
 
 interface Props {
@@ -25,6 +26,7 @@ export function HabitRow({ habit, done, streak = 0, onToggle, onTap, showChevron
   const [popKey, setPopKey] = useState(0);
   const [burst, setBurst] = useState<number | null>(null);
   const [prevDone, setPrevDone] = useState(done);
+  const { gate } = useGate();
 
   useEffect(() => {
     if (!prevDone && done) {
@@ -34,21 +36,20 @@ export function HabitRow({ habit, done, streak = 0, onToggle, onTap, showChevron
     setPrevDone(done);
   }, [done, streak, prevDone]);
 
-  const handleCheck = (e: React.MouseEvent) => {
+  const handleCheck = gate((e: React.MouseEvent) => {
     e.stopPropagation();
     tg.haptic(done ? 'light' : 'medium');
     setPopKey((k) => k + 1);
     onToggle();
-  };
+  });
 
+  // Reading detail is allowed; only toggling is gated.
   const handleRow = () => {
     if (onTap) {
       tg.haptic('light');
       onTap();
     } else {
-      tg.haptic(done ? 'light' : 'medium');
-      setPopKey((k) => k + 1);
-      onToggle();
+      handleCheck({ stopPropagation: () => {} } as React.MouseEvent);
     }
   };
 

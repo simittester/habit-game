@@ -8,6 +8,7 @@ import { TextArea } from '../components/Input';
 import { listInbox, createInboxItem, deleteInboxItem, markInboxProcessed } from '../api/inbox';
 import { createTask } from '../api/tasks';
 import { tg } from '../lib/telegram';
+import { useGate } from '../hooks/useGate';
 import { format } from 'date-fns';
 import type { InboxItem } from '../types/db';
 
@@ -16,6 +17,7 @@ export default function InboxScreen() {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [recentlyPromoted, setRecentlyPromoted] = useState<string | null>(null);
+  const { gate } = useGate();
 
   const q = useQuery({ queryKey: ['inbox'], queryFn: listInbox });
 
@@ -60,7 +62,7 @@ export default function InboxScreen() {
             <div className="text-[14px] text-hint">{open_items.length ? `${open_items.length} captured` : 'Your mind is clear.'}</div>
           </div>
           <button
-            onClick={() => { tg.haptic('medium'); setOpen(true); }}
+            onClick={gate(() => { tg.haptic('medium'); setOpen(true); })}
             className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center active:scale-95"
           >
             <Plus size={20} />
@@ -75,7 +77,7 @@ export default function InboxScreen() {
           hint="Capture anything here — tasks, ideas, reminders, notes."
           action={
             <button
-              onClick={() => setOpen(true)}
+              onClick={gate(() => setOpen(true))}
               className="px-5 py-2.5 rounded-full bg-accent text-white text-sm font-semibold"
             >
               Capture something
@@ -113,7 +115,7 @@ export default function InboxScreen() {
                   ) : (
                     !i.processed && (
                       <button
-                        onClick={() => promoteM.mutate(i)}
+                        onClick={gate(() => promoteM.mutate(i))}
                         className="text-accent p-1 active:opacity-60"
                         aria-label="Promote to task"
                       >
@@ -122,7 +124,7 @@ export default function InboxScreen() {
                     )
                   )}
                   <button
-                    onClick={() => { tg.haptic('medium'); delM.mutate(i.id); }}
+                    onClick={gate(() => { tg.haptic('medium'); delM.mutate(i.id); })}
                     className="text-hint p-1 active:opacity-60"
                     aria-label="Delete"
                   >

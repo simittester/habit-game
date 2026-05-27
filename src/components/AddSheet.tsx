@@ -1,22 +1,24 @@
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Lock } from 'lucide-react';
 import { Sheet } from './Sheet';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createInboxItem } from '../api/inbox';
 import { createTask } from '../api/tasks';
 import { tg } from '../lib/telegram';
+import { useGate } from '../hooks/useGate';
 
 export function GlobalAddButton() {
   const [open, setOpen] = useState(false);
+  const { isReadOnly, gate } = useGate();
   return (
     <>
       <button
-        onClick={() => { tg.haptic('medium'); setOpen(true); }}
-        className="fixed right-4 z-30 w-14 h-14 rounded-full bg-accent text-white flex items-center justify-center shadow-lg active:scale-95 transition"
+        onClick={gate(() => { tg.haptic('medium'); setOpen(true); })}
+        className={`fixed right-4 z-30 w-14 h-14 rounded-full text-white flex items-center justify-center shadow-lg active:scale-95 transition ${isReadOnly ? 'bg-bg-4' : 'bg-accent'}`}
         style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}
-        aria-label="Add"
+        aria-label={isReadOnly ? 'Locked — upgrade to add' : 'Add'}
       >
-        <Plus size={26} strokeWidth={2.2} />
+        {isReadOnly ? <Lock size={20} /> : <Plus size={26} strokeWidth={2.2} />}
       </button>
       <Sheet open={open} onClose={() => setOpen(false)} title="Capture something">
         <QuickCaptureForm onDone={() => setOpen(false)} />

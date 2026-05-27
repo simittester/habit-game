@@ -14,6 +14,7 @@ import { getSettings } from '../api/settings';
 import { listWeightLogs, bmi, bmiBucket } from '../api/body';
 import { format } from 'date-fns';
 import { tg } from '../lib/telegram';
+import { useGate } from '../hooks/useGate';
 import type { Meal, MealType, WeightLog } from '../types/db';
 
 export default function HealthScreen() {
@@ -25,6 +26,7 @@ export default function HealthScreen() {
   const [mealName, setMealName] = useState('');
   const [mealType, setMealType] = useState<MealType>('meal');
   const [calories, setCalories] = useState('');
+  const { gate } = useGate();
 
   const waterQ = useQuery({ queryKey: ['water', 'today'], queryFn: getWaterToday });
   const mealsQ = useQuery({ queryKey: ['meals', 'today'], queryFn: () => listMealsForDate() });
@@ -136,13 +138,13 @@ export default function HealthScreen() {
 
           <div className="mt-3 grid grid-cols-2 gap-2">
             <button
-              onClick={() => { tg.haptic('medium'); setWeightOpen(true); }}
+              onClick={gate(() => { tg.haptic('medium'); setWeightOpen(true); })}
               className="py-2.5 rounded-2xl bg-bg-3 text-[13px] font-semibold active:opacity-70 flex items-center justify-center gap-1.5"
             >
               <Weight size={13} /> Log weight
             </button>
             <button
-              onClick={() => { tg.haptic('medium'); setHeightOpen(true); }}
+              onClick={gate(() => { tg.haptic('medium'); setHeightOpen(true); })}
               className="py-2.5 rounded-2xl bg-bg-3 text-[13px] font-semibold active:opacity-70 flex items-center justify-center gap-1.5"
             >
               <Ruler size={13} /> {height ? 'Edit height' : 'Set height'}
@@ -160,10 +162,10 @@ export default function HealthScreen() {
               <div className="text-[13px] text-hint">{glasses} of {target} glasses</div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => { tg.haptic('light'); setW.mutate(Math.max(0, glasses - 1)); }} className="w-10 h-10 rounded-full bg-bg-3 flex items-center justify-center">
+              <button onClick={gate(() => { tg.haptic('light'); setW.mutate(Math.max(0, glasses - 1)); })} className="w-10 h-10 rounded-full bg-bg-3 flex items-center justify-center">
                 <Minus size={18} />
               </button>
-              <button onClick={() => { tg.haptic('medium'); setW.mutate(glasses + 1); }} className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center">
+              <button onClick={gate(() => { tg.haptic('medium'); setW.mutate(glasses + 1); })} className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center">
                 <Plus size={18} />
               </button>
             </div>
@@ -172,7 +174,7 @@ export default function HealthScreen() {
       </Section>
 
       <Section title="Meals today" action={
-        <button onClick={() => setMealOpen(true)} className="text-accent text-[13px]"><Plus size={14} className="inline -mt-0.5" /> Add</button>
+        <button onClick={gate(() => setMealOpen(true))} className="text-accent text-[13px]"><Plus size={14} className="inline -mt-0.5" /> Add</button>
       }>
         {(mealsQ.data ?? []).length === 0 ? (
           <Card><div className="text-hint text-sm text-center py-4">No meals logged.</div></Card>
@@ -185,7 +187,7 @@ export default function HealthScreen() {
                   <div className="text-[15px] font-medium">{m.name}</div>
                   <div className="text-[12px] text-hint">{format(new Date(m.logged_at), 'HH:mm')} · {m.meal_type}{m.calories ? ` · ${m.calories} kcal` : ''}</div>
                 </div>
-                <button onClick={() => delM.mutate(m.id)} className="text-hint">
+                <button onClick={gate(() => delM.mutate(m.id))} className="text-hint">
                   <Trash2 size={16} />
                 </button>
               </div>
