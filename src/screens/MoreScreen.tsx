@@ -1,38 +1,44 @@
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { ChevronRight } from 'lucide-react';
 import { Section } from '../components/Card';
 import { GlobalAddButton } from '../components/AddSheet';
+import { isAdmin } from '../api/admin';
 import { tg } from '../lib/telegram';
+import { useT } from '../i18n';
 import type { Profile } from '../lib/auth';
 
 interface Item { to: string; emoji: string; title: string; hint: string }
-
-const ITEMS: Item[] = [
-  { to: '/more/projects', emoji: '📁', title: 'Projects', hint: 'Track bigger outcomes' },
-  { to: '/more/areas', emoji: '🗂️', title: 'Areas', hint: 'Balance life domains' },
-  { to: '/more/rituals', emoji: '🔁', title: 'Rituals', hint: 'Evening shutdown & weekly review' },
-  { to: '/more/health', emoji: '🩺', title: 'Health', hint: 'Weight, water, meals' },
-  { to: '/more/money', emoji: '💵', title: 'Money', hint: 'Expenses & budget' },
-  { to: '/more/daily-plans', emoji: '📋', title: 'Daily Plans', hint: 'Plan tomorrow tonight' },
-  { to: '/more/captures', emoji: '💡', title: 'Captures', hint: 'Ideas waiting for action' },
-  { to: '/more/activity', emoji: '⚡', title: 'Activity', hint: 'Everything you logged' },
-  { to: '/more/settings', emoji: '⚙️', title: 'Settings', hint: 'Preferences & account' },
-];
 
 interface Props { profile: Profile }
 
 export default function MoreScreen({ profile }: Props) {
   const navigate = useNavigate();
+  const { t } = useT();
+  const adminQ = useQuery({ queryKey: ['is_admin'], queryFn: isAdmin, staleTime: 5 * 60_000 });
+  const baseItems: Item[] = [
+    { to: '/more/projects',    emoji: '📁',  title: t.more.projects,    hint: t.more.projectsHint },
+    { to: '/more/areas',       emoji: '🗂️', title: t.more.areas,       hint: t.more.areasHint },
+    { to: '/more/rituals',     emoji: '🔁', title: t.more.rituals,     hint: t.more.ritualsHint },
+    { to: '/more/health',      emoji: '🩺', title: t.more.health,      hint: t.more.healthHint },
+    { to: '/more/money',       emoji: '💵', title: t.more.money,       hint: t.more.moneyHint },
+    { to: '/more/daily-plans', emoji: '📋', title: t.more.dailyPlans,  hint: t.more.dailyPlansHint },
+    { to: '/more/captures',    emoji: '💡', title: t.more.captures,    hint: t.more.capturesHint },
+    { to: '/more/activity',    emoji: '⚡', title: t.more.activity,    hint: t.more.activityHint },
+    { to: '/more/settings',    emoji: '⚙️', title: t.more.settings,    hint: t.more.settingsHint },
+  ];
+  const adminItem: Item = { to: '/more/admin', emoji: '👑', title: t.more.admin, hint: t.more.adminHint };
+  const items = adminQ.data === true ? [...baseItems, adminItem] : baseItems;
   return (
     <div className="pb-6">
-      <Section title="More">
-        <h1 className="text-[28px] font-bold leading-tight">Everything else, still close</h1>
-        <div className="text-[14px] text-hint">Secondary spaces for deeper planning, reviews, health, money, and preferences.</div>
+      <Section title={t.tab.more}>
+        <h1 className="text-[28px] font-bold leading-tight">{t.more.title}</h1>
+        <div className="text-[14px] text-hint">{t.more.subtitle}</div>
       </Section>
 
       <Section title="">
         <div className="space-y-2">
-          {ITEMS.map((it) => (
+          {items.map((it) => (
             <button
               key={it.to}
               onClick={() => { tg.haptic('light'); navigate(it.to); }}
@@ -49,12 +55,12 @@ export default function MoreScreen({ profile }: Props) {
         </div>
       </Section>
 
-      <Section title="Account">
+      <Section title={t.more.signedInAs}>
         <div className="bg-bg-2 rounded-2xl p-4">
-          <div className="text-[13px] text-hint">Signed in as</div>
+          <div className="text-[13px] text-hint">{t.more.signedInAs}</div>
           <div className="text-[15px] font-semibold">{profile.first_name ?? ''} {profile.last_name ?? ''}</div>
           {profile.username && <div className="text-[12px] text-accent">@{profile.username}</div>}
-          <div className="text-[11px] text-hint mt-2">Telegram ID: {profile.telegram_id}</div>
+          <div className="text-[11px] text-hint mt-2">{t.more.telegramId}: {profile.telegram_id}</div>
         </div>
       </Section>
 
