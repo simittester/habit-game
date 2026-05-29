@@ -1,10 +1,12 @@
 import { useSubscription } from '../hooks/useSubscription';
 import { openPaywall } from '../lib/paywall';
 import { tg } from '../lib/telegram';
+import { useT } from '../i18n';
 import { Sparkles } from 'lucide-react';
 
 export function TrialBanner() {
   const sub = useSubscription();
+  const { t } = useT();
   if (sub.status === 'loading' || sub.status === 'active') return null;
 
   const handle = () => { tg.haptic('medium'); openPaywall(); };
@@ -20,12 +22,11 @@ export function TrialBanner() {
           <Sparkles size={14} className={urgent ? 'text-amber-300' : 'text-accent'} />
           <div className="text-[12px] truncate">
             <span className={`font-semibold ${urgent ? 'text-amber-300' : 'text-accent'}`}>
-              {sub.trialDaysLeft} {sub.trialDaysLeft === 1 ? 'day' : 'days'} left
+              {t.trial.bannerDays(sub.trialDaysLeft)}
             </span>
-            <span className="text-hint"> in your free trial</span>
           </div>
         </div>
-        <div className={`text-[12px] font-semibold shrink-0 ${urgent ? 'text-amber-300' : 'text-accent'}`}>Upgrade →</div>
+        <div className={`text-[12px] font-semibold shrink-0 ${urgent ? 'text-amber-300' : 'text-accent'}`}>{t.trial.upgrade} →</div>
       </button>
     );
   }
@@ -39,11 +40,10 @@ export function TrialBanner() {
       <div className="flex items-center gap-2 min-w-0">
         <Sparkles size={14} className="text-red-400" />
         <div className="text-[12px] truncate">
-          <span className="font-semibold text-red-400">Trial ended.</span>
-          <span className="text-hint"> Upgrade to keep editing.</span>
+          <span className="font-semibold text-red-400">{t.trial.bannerExpired}</span>
         </div>
       </div>
-      <div className="text-[12px] font-semibold text-red-400 shrink-0">Upgrade →</div>
+      <div className="text-[12px] font-semibold text-red-400 shrink-0">{t.trial.upgrade} →</div>
     </button>
   );
 }

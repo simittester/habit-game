@@ -1,17 +1,18 @@
 import { NavLink } from 'react-router-dom';
 import { Sun, Inbox, Flame, LineChart, MoreHorizontal } from 'lucide-react';
 import { tg } from '../lib/telegram';
+import { useT } from '../i18n';
 import clsx from 'clsx';
 
-const tabs = [
-  { to: '/today', label: 'Today', Icon: Sun },
-  { to: '/inbox', label: 'Inbox', Icon: Inbox },
-  { to: '/habits', label: 'Habits', Icon: Flame },
-  { to: '/progress', label: 'Progress', Icon: LineChart },
-  { to: '/more', label: 'More', Icon: MoreHorizontal },
-];
-
 export function TabBar() {
+  const { t } = useT();
+  const tabs = [
+    { to: '/today', label: t.tab.today, Icon: Sun },
+    { to: '/inbox', label: t.tab.inbox, Icon: Inbox },
+    { to: '/habits', label: t.tab.habits, Icon: Flame },
+    { to: '/progress', label: t.tab.progress, Icon: LineChart },
+    { to: '/more', label: t.tab.more, Icon: MoreHorizontal },
+  ];
   return (
     <nav
       className="fixed bottom-0 inset-x-0 bg-bg/85 backdrop-blur-xl border-t border-divider px-2 pt-2 z-20"

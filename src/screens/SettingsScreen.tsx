@@ -5,6 +5,7 @@ import { Section, Card } from '../components/Card';
 import { getSettings, upsertSettings } from '../api/settings';
 import { signOut } from '../lib/auth';
 import { tg } from '../lib/telegram';
+import { useT, type LangCode } from '../i18n';
 import type { Profile } from '../lib/auth';
 
 interface Props { profile: Profile }
@@ -18,6 +19,7 @@ const WEEK_STARTS: Array<{ v: number; label: string }> = [
 export default function SettingsScreen({ profile }: Props) {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ['settings'], queryFn: getSettings });
+  const { t } = useT();
 
   const [water, setWater] = useState(8);
   const [sleepTarget, setSleepTarget] = useState(8);
@@ -35,6 +37,11 @@ export default function SettingsScreen({ profile }: Props) {
       setFocusCount(q.data.daily_focus_count);
     }
   }, [q.data]);
+
+  const langM = useMutation({
+    mutationFn: (lang: LangCode | null) => upsertSettings({ language: lang }),
+    onSuccess: () => { tg.notify('success'); qc.invalidateQueries({ queryKey: ['settings'] }); },
+  });
 
   const saveM = useMutation({
     mutationFn: () => upsertSettings({
@@ -67,14 +74,28 @@ export default function SettingsScreen({ profile }: Props) {
     ? 'bg-green-500/15 text-green-400'
     : 'bg-accent text-white';
 
+  const langCurrent = q.data?.language ?? null;
+
   return (
     <div className="pb-6">
       <Section title="">
-        <h1 className="text-[28px] font-bold leading-tight mt-2">Settings</h1>
+        <h1 className="text-[28px] font-bold leading-tight mt-2">{t.settings.title}</h1>
         <div className="text-[14px] text-hint">Tune the app to fit your life.</div>
       </Section>
 
-      <Section title="Account">
+      <Section title={t.settings.language}>
+        <Card>
+          <Row label={t.settings.language} hint={langCurrent ? `Override · ${langCurrent.toUpperCase()}` : t.settings.languageHint}>
+            <div className="flex gap-1.5">
+              <LangChip active={langCurrent === null} disabled={langM.isPending} onClick={() => langM.mutate(null)}>Auto</LangChip>
+              <LangChip active={langCurrent === 'en'} disabled={langM.isPending} onClick={() => langM.mutate('en')}>EN</LangChip>
+              <LangChip active={langCurrent === 'ru'} disabled={langM.isPending} onClick={() => langM.mutate('ru')}>RU</LangChip>
+            </div>
+          </Row>
+        </Card>
+      </Section>
+
+      <Section title={t.settings.account}>
         <Card>
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-bg-3 flex items-center justify-center text-xl font-bold">
@@ -89,7 +110,7 @@ export default function SettingsScreen({ profile }: Props) {
           <div className="h-px bg-divider my-3" />
           <button
             onClick={async () => {
-              const ok = await tg.showConfirm('Sign out? Your data stays safe — you can sign back in by reopening the mini app.');
+              const ok = await tg.showConfirm(t.settings.signOutConfirm);
               if (!ok) return;
               signOut();
               location.reload();
@@ -97,7 +118,7 @@ export default function SettingsScreen({ profile }: Props) {
             className="w-full flex items-center justify-center gap-2 text-red-400 text-[14px] font-medium py-2 active:opacity-60"
           >
             <LogOut size={16} />
-            Sign out
+            {t.common.signOut}
           </button>
         </Card>
       </Section>
@@ -160,6 +181,8 @@ export default function SettingsScreen({ profile }: Props) {
         </Card>
       </Section>
 
+      <NotificationsSection settings={q.data} />
+
       {showButton && (
         <div className="px-4 mt-2">
           <button
@@ -173,7 +196,7 @@ export default function SettingsScreen({ profile }: Props) {
         </div>
       )}
 
-      <Section title="Legal">
+      <Section title={t.settings.legal}>
         <Card>
           <a
             href="/legal/privacy.html"
@@ -181,7 +204,7 @@ export default function SettingsScreen({ profile }: Props) {
             rel="noopener noreferrer"
             className="flex items-center justify-between py-2.5 text-[14px] active:opacity-60"
           >
-            <span>Privacy policy</span>
+            <span>{t.settings.privacy}</span>
             <span className="text-hint">↗</span>
           </a>
           <div className="h-px bg-divider" />
@@ -191,7 +214,7 @@ export default function SettingsScreen({ profile }: Props) {
             rel="noopener noreferrer"
             className="flex items-center justify-between py-2.5 text-[14px] active:opacity-60"
           >
-            <span>Terms of service</span>
+            <span>{t.settings.terms}</span>
             <span className="text-hint">↗</span>
           </a>
         </Card>
@@ -201,6 +224,65 @@ export default function SettingsScreen({ profile }: Props) {
         Momentum · made for you
       </div>
     </div>
+  );
+}
+
+function NotificationsSection({ settings }: { settings: import('../types/db').UserSettings | null | undefined }) {
+  const qc = useQueryClient();
+  const evening = settings?.notify_evening_shutdown ?? true;
+  const habits = settings?.notify_habit_reminders ?? true;
+  const hour = settings?.notify_evening_hour ?? 21;
+
+  const m = useMutation({
+    mutationFn: (patch: Partial<import('../types/db').UserSettings>) => upsertSettings(patch),
+    onSuccess: () => { tg.notify('success'); qc.invalidateQueries({ queryKey: ['settings'] }); },
+  });
+
+  return (
+    <Section title="Notifications">
+      <Card>
+        <Row label="Evening shutdown nudge" hint="Bot pings you to close the day">
+          <Toggle on={evening} disabled={m.isPending} onChange={(v) => m.mutate({ notify_evening_shutdown: v })} />
+        </Row>
+        {evening && (
+          <>
+            <div className="h-px bg-divider my-2" />
+            <Row label="Nudge at" hint={`${String(hour).padStart(2, '0')}:00 local`}>
+              <Stepper value={hour} min={17} max={23} onChange={(v) => m.mutate({ notify_evening_hour: v })} />
+            </Row>
+          </>
+        )}
+        <div className="h-px bg-divider my-2" />
+        <Row label="Habit reminders" hint="Per-habit times you set">
+          <Toggle on={habits} disabled={m.isPending} onChange={(v) => m.mutate({ notify_habit_reminders: v })} />
+        </Row>
+      </Card>
+    </Section>
+  );
+}
+
+function Toggle({ on, disabled, onChange }: { on: boolean; disabled?: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      onClick={() => { tg.selection(); onChange(!on); }}
+      disabled={disabled}
+      className={`relative w-11 h-6 rounded-full transition disabled:opacity-50 ${on ? 'bg-accent' : 'bg-bg-3'}`}
+      aria-pressed={on}
+    >
+      <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${on ? 'translate-x-5' : ''}`} />
+    </button>
+  );
+}
+
+function LangChip({ active, disabled, onClick, children }: { active: boolean; disabled?: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={() => { tg.selection(); onClick(); }}
+      disabled={disabled}
+      className={`px-3 py-1.5 rounded-full text-[12px] font-semibold transition ${active ? 'bg-accent text-white' : 'bg-bg-3 text-text'} disabled:opacity-50`}
+    >
+      {children}
+    </button>
   );
 }
 
