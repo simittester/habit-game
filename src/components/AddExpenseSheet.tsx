@@ -5,6 +5,7 @@ import { Sheet } from './Sheet';
 import { TextField } from './Input';
 import { addExpense, deleteExpense, listExpensesForDate } from '../api/daily';
 import { tg } from '../lib/telegram';
+import { sanitizeDecimal } from '../lib/numbers';
 import type { Expense } from '../types/db';
 
 const CATEGORIES = [
@@ -93,9 +94,9 @@ export function AddExpenseSheet({ open, onClose }: Props) {
             <TextField
               autoFocus={expenses.length === 0}
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => setAmount(sanitizeDecimal(e.target.value, 2))}
               placeholder="0.00"
-              type="number"
+              type="text"
               inputMode="decimal"
             />
           </div>

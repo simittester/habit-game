@@ -4,6 +4,7 @@ import { Sheet } from './Sheet';
 import { TextField } from './Input';
 import { upsertWeight } from '../api/body';
 import { tg } from '../lib/telegram';
+import { sanitizeDecimal } from '../lib/numbers';
 
 const MIN_KG = 20;
 const MAX_KG = 300;
@@ -37,14 +38,11 @@ export function LogWeightSheet({ open, onClose, initial }: Props) {
           <div className="text-xs text-hint mb-1 tracking-wider uppercase">Weight (kg)</div>
           <TextField
             autoFocus
-            type="number"
+            type="text"
             inputMode="decimal"
-            min={MIN_KG}
-            max={MAX_KG}
-            step={0.1}
             maxLength={5}
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => setValue(sanitizeDecimal(e.target.value, 1))}
             placeholder={`${MIN_KG}–${MAX_KG}`}
             className={showError ? 'ring-2 ring-red-500/60' : ''}
           />
