@@ -92,14 +92,19 @@ export async function deleteExpense(id: string): Promise<void> {
 }
 
 // --- Summary / score ---
+function isoDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
 export async function fetchSummary(days = 7): Promise<DailySummary[]> {
-  const since = new Date();
-  since.setDate(since.getDate() - (days - 1));
-  const { data, error } = await sb()
-    .from('daily_summary')
-    .select('*')
-    .gte('day', since.toISOString().slice(0, 10))
-    .order('day', { ascending: true });
+  const end = new Date();
+  const start = new Date();
+  start.setDate(start.getDate() - (days - 1));
+  return fetchSummaryRange(isoDate(start), isoDate(end));
+}
+
+export async function fetchSummaryRange(startIso: string, endIso: string): Promise<DailySummary[]> {
+  const { data, error } = await sb().rpc('daily_summary_range', { p_start: startIso, p_end: endIso });
   if (error) throw error;
   return (data ?? []) as DailySummary[];
 }

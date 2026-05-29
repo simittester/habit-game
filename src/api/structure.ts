@@ -1,5 +1,5 @@
 import { sb } from '../lib/supabase';
-import type { Area, Project, Review, Ritual, ReviewKind, RitualKind } from '../types/db';
+import type { Area, Project, Review, ReviewKind } from '../types/db';
 import { todayIso } from '../lib/dates';
 
 // --- Areas ---
@@ -107,28 +107,3 @@ export async function upsertReview(input: {
   return data as Review;
 }
 
-// --- Rituals ---
-export async function listRituals(): Promise<Ritual[]> {
-  const { data, error } = await sb()
-    .from('rituals')
-    .select('*')
-    .order('kind', { ascending: true });
-  if (error) throw error;
-  return data as Ritual[];
-}
-
-export async function createRitual(input: { kind: RitualKind; name: string; steps: Array<{ id: string; text: string }> }): Promise<Ritual> {
-  const { data, error } = await sb().from('rituals').insert(input).select('*').single();
-  if (error) throw error;
-  return data as Ritual;
-}
-
-export async function updateRitual(id: string, patch: Partial<Ritual>): Promise<void> {
-  const { error } = await sb().from('rituals').update(patch).eq('id', id);
-  if (error) throw error;
-}
-
-export async function deleteRitual(id: string): Promise<void> {
-  const { error } = await sb().from('rituals').delete().eq('id', id);
-  if (error) throw error;
-}

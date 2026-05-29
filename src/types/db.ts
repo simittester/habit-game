@@ -2,7 +2,6 @@ export type Frequency = 'daily' | 'weekdays' | 'weekends' | 'custom';
 export type TaskStatus = 'open' | 'done' | 'cancelled';
 export type ProjectStatus = 'active' | 'paused' | 'completed' | 'archived';
 export type ReviewKind = 'daily' | 'weekly' | 'monthly';
-export type RitualKind = 'morning' | 'evening' | 'weekly_review' | 'custom';
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'meal';
 
 export interface Area {
@@ -150,18 +149,6 @@ export interface Review {
   updated_at: string;
 }
 
-export interface Ritual {
-  id: string;
-  user_id: string;
-  kind: RitualKind;
-  name: string;
-  steps: Array<{ id: string; text: string; done?: boolean }>;
-  last_completed_at: string | null;
-  streak: number;
-  created_at: string;
-  updated_at: string;
-}
-
 export type SubscriptionStatus = 'trial' | 'active' | 'cancelled' | 'expired';
 export type SubscriptionTier = 'week' | 'month' | 'year';
 
@@ -183,6 +170,10 @@ export interface UserSettings {
   subscription_tier: SubscriptionTier | null;
   subscription_renews_at: string | null;
   sleep_target_hours: number | null;
+  language: 'en' | 'ru' | null;
+  notify_evening_shutdown: boolean;
+  notify_evening_hour: number;
+  notify_habit_reminders: boolean;
   updated_at: string;
 }
 
