@@ -15,11 +15,13 @@ import { AddHabitSheet } from '../components/AddHabitSheet';
 import { AddTimeBlockSheet } from '../components/AddTimeBlockSheet';
 import { AddMealSheet } from '../components/AddMealSheet';
 import { AddExpenseSheet } from '../components/AddExpenseSheet';
+import { AddSleepSheet } from '../components/AddSleepSheet';
 import { GlobalAddButton } from '../components/AddSheet';
 import { listHabits, listTodayLogs, toggleHabitToday, isHabitDueToday, listHabitStreaks } from '../api/habits';
 import { listTopPriorities, toggleTaskDone } from '../api/tasks';
 import { listBlocksForDate, toggleBlock } from '../api/timeblocks';
 import { getWaterToday, setWater, fetchScoreFor, listMealsForDate } from '../api/daily';
+import { getSleepToday } from '../api/sleep';
 import { todayIso, longDate } from '../lib/dates';
 import { tg } from '../lib/telegram';
 import { useGate } from '../hooks/useGate';
@@ -36,6 +38,7 @@ export default function TodayScreen({ profile }: Props) {
   const [blockOpen, setBlockOpen] = useState(false);
   const [mealOpen, setMealOpen] = useState(false);
   const [expenseOpen, setExpenseOpen] = useState(false);
+  const [sleepOpen, setSleepOpen] = useState(false);
   const { gate } = useGate();
 
   const habitsQ = useQuery({ queryKey: ['habits'], queryFn: listHabits });
@@ -45,6 +48,7 @@ export default function TodayScreen({ profile }: Props) {
   const blocksQ = useQuery({ queryKey: ['blocks', todayIso()], queryFn: () => listBlocksForDate() });
   const waterQ = useQuery({ queryKey: ['water', 'today'], queryFn: getWaterToday });
   const mealsQ = useQuery({ queryKey: ['meals', 'today'], queryFn: () => listMealsForDate() });
+  const sleepQ = useQuery({ queryKey: ['sleep', 'today'], queryFn: getSleepToday });
   const scoreQ = useQuery({ queryKey: ['score', todayIso()], queryFn: () => fetchScoreFor(todayIso()) });
 
   const todayHabits: Habit[] = (habitsQ.data ?? []).filter((h: Habit) => isHabitDueToday(h));
@@ -165,8 +169,9 @@ export default function TodayScreen({ profile }: Props) {
           <CheckInChip
             emoji="😴"
             title="Sleep"
-            hint="Coming soon"
-            onClick={() => tg.showAlert('Sleep logging is coming soon.')}
+            hint={sleepQ.data ? `${Number(sleepQ.data.hours).toFixed(1)}h logged` : 'Log sleep'}
+            onClick={gate(() => setSleepOpen(true))}
+            done={Boolean(sleepQ.data && Number(sleepQ.data.hours) >= 7)}
           />
         </div>
       </Section>
@@ -234,6 +239,7 @@ export default function TodayScreen({ profile }: Props) {
       <AddTimeBlockSheet open={blockOpen} onClose={() => setBlockOpen(false)} />
       <AddMealSheet open={mealOpen} onClose={() => setMealOpen(false)} />
       <AddExpenseSheet open={expenseOpen} onClose={() => setExpenseOpen(false)} />
+      <AddSleepSheet open={sleepOpen} onClose={() => setSleepOpen(false)} />
       <GlobalAddButton />
     </div>
   );

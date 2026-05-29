@@ -182,6 +182,7 @@ export interface UserSettings {
   subscription_status: SubscriptionStatus;
   subscription_tier: SubscriptionTier | null;
   subscription_renews_at: string | null;
+  sleep_target_hours: number | null;
   updated_at: string;
 }
 
@@ -190,6 +191,18 @@ export interface WeightLog {
   user_id: string;
   log_date: string;
   weight_kg: number;
+  note: string | null;
+  created_at: string;
+}
+
+export interface SleepLog {
+  id: string;
+  user_id: string;
+  log_date: string;
+  hours: number;
+  bedtime: string | null;
+  wake_time: string | null;
+  quality: 1 | 2 | 3 | 4 | 5 | null;
   note: string | null;
   created_at: string;
 }

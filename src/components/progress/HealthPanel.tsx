@@ -6,9 +6,10 @@ import { ProgressRow } from '../charts/ProgressRow';
 import { InsightCard } from '../charts/InsightCard';
 import { listMealsForDate } from '../../api/daily';
 import { listWeightLogs, bmi, bmiBucket } from '../../api/body';
+import { listSleepLogs } from '../../api/sleep';
 import { getSettings } from '../../api/settings';
 import { format } from 'date-fns';
-import type { DailySummary, WeightLog, Meal } from '../../types/db';
+import type { DailySummary, WeightLog, Meal, SleepLog } from '../../types/db';
 
 interface Props {
   rows: DailySummary[];
@@ -18,6 +19,7 @@ interface Props {
 
 export function HealthPanel({ rows, startDate, endDate: _endDate }: Props) {
   const weightsQ = useQuery({ queryKey: ['weight', 'logs'], queryFn: () => listWeightLogs(180) });
+  const sleepQ = useQuery({ queryKey: ['sleep', 'logs'], queryFn: () => listSleepLogs(60) });
   const settingsQ = useQuery({ queryKey: ['settings'], queryFn: getSettings });
 
   // We don't yet have per-range meals across all days — fetch meals for today only
@@ -26,7 +28,9 @@ export function HealthPanel({ rows, startDate, endDate: _endDate }: Props) {
 
   const weights = (weightsQ.data ?? []) as WeightLog[];
   const meals = (mealsTodayQ.data ?? []) as Meal[];
+  const sleepLogs = (sleepQ.data ?? []) as SleepLog[];
   const height = settingsQ.data?.height_cm ? Number(settingsQ.data.height_cm) : null;
+  const sleepTarget = settingsQ.data?.sleep_target_hours ? Number(settingsQ.data.sleep_target_hours) : 8;
 
   // Water trend
   const waterValues = rows.map((r) => r.water_glasses);
@@ -49,7 +53,14 @@ export function HealthPanel({ rows, startDate, endDate: _endDate }: Props) {
   meals.forEach((m) => { mealsByType[m.meal_type] = (mealsByType[m.meal_type] ?? 0) + 1; });
   const mealsLoggedTotal = rows.reduce((s, r) => s + r.meals_logged, 0);
 
-  const noData = waterAvg === 0 && latestWeight === null && mealsLoggedTotal === 0;
+  // Sleep stats (filter to range)
+  const startIsoFilter = format(startDate, 'yyyy-MM-dd');
+  const sleepInRange = sleepLogs.filter((s) => s.log_date >= startIsoFilter);
+  const sleepAvg = sleepInRange.length === 0 ? 0 : sleepInRange.reduce((s, l) => s + Number(l.hours), 0) / sleepInRange.length;
+  const sleepHitDays = sleepInRange.filter((s) => Number(s.hours) >= sleepTarget).length;
+  const sleepHitRate = sleepInRange.length === 0 ? 0 : Math.round((sleepHitDays / sleepInRange.length) * 100);
+
+  const noData = waterAvg === 0 && latestWeight === null && mealsLoggedTotal === 0 && sleepInRange.length === 0;
 
   return (
     <Panel
@@ -66,6 +77,22 @@ export function HealthPanel({ rows, startDate, endDate: _endDate }: Props) {
             { label: 'target days hit', value: `${waterHitRate}%`, color: waterHitRate >= 70 ? 'success' : 'warn' },
             { label: 'meals logged', value: mealsLoggedTotal, color: 'default' },
           ]} />
+
+          {sleepInRange.length > 0 && (
+            <PanelSection title={`Sleep · avg ${sleepAvg.toFixed(1)}h · target ${sleepTarget}h`}>
+              <MiniLineChart
+                values={sleepInRange.map((s) => Number(s.hours))}
+                color="#a78bfa"
+                target={sleepTarget}
+                showZero
+                height={50}
+              />
+              <div className="flex items-center justify-between text-[10px] text-hint mt-1">
+                <span>{sleepHitRate}% of days hit target</span>
+                <span>{sleepInRange.length} logged</span>
+              </div>
+            </PanelSection>
+          )}
 
           {waterValues.some((v) => v > 0) && (
             <PanelSection title={`Water · target ${waterTarget} gl/day`}>

@@ -20,6 +20,7 @@ export default function SettingsScreen({ profile }: Props) {
   const q = useQuery({ queryKey: ['settings'], queryFn: getSettings });
 
   const [water, setWater] = useState(8);
+  const [sleepTarget, setSleepTarget] = useState(8);
   const [currency, setCurrency] = useState('USD');
   const [startOfWeek, setStartOfWeek] = useState(1);
   const [focusCount, setFocusCount] = useState(3);
@@ -28,6 +29,7 @@ export default function SettingsScreen({ profile }: Props) {
   useEffect(() => {
     if (q.data) {
       setWater(q.data.water_daily_target);
+      setSleepTarget(q.data.sleep_target_hours ? Number(q.data.sleep_target_hours) : 8);
       setCurrency(q.data.currency);
       setStartOfWeek(q.data.start_of_week);
       setFocusCount(q.data.daily_focus_count);
@@ -37,6 +39,7 @@ export default function SettingsScreen({ profile }: Props) {
   const saveM = useMutation({
     mutationFn: () => upsertSettings({
       water_daily_target: water,
+      sleep_target_hours: sleepTarget,
       currency,
       start_of_week: startOfWeek,
       daily_focus_count: focusCount,
@@ -52,6 +55,7 @@ export default function SettingsScreen({ profile }: Props) {
   // Detect unsaved changes
   const dirty = Boolean(q.data) && (
     q.data!.water_daily_target !== water ||
+    Number(q.data!.sleep_target_hours ?? 8) !== sleepTarget ||
     q.data!.currency !== currency ||
     q.data!.start_of_week !== startOfWeek ||
     q.data!.daily_focus_count !== focusCount
@@ -98,10 +102,24 @@ export default function SettingsScreen({ profile }: Props) {
         </Card>
       </Section>
 
-      <Section title="Hydration">
+      <Section title="Health targets">
         <Card>
           <Row label="Daily water target" hint={`${water} glasses`}>
             <Stepper value={water} min={1} max={20} onChange={setWater} />
+          </Row>
+          <div className="h-px bg-divider my-2" />
+          <Row label="Nightly sleep target" hint={`${sleepTarget.toFixed(1)} hours`}>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { tg.haptic('light'); setSleepTarget((v) => Math.max(4, +(v - 0.5).toFixed(1))); }}
+                className="w-8 h-8 rounded-full bg-bg-3 flex items-center justify-center"
+              >−</button>
+              <div className="w-10 text-center font-semibold tabular-nums">{sleepTarget.toFixed(1)}</div>
+              <button
+                onClick={() => { tg.haptic('light'); setSleepTarget((v) => Math.min(12, +(v + 0.5).toFixed(1))); }}
+                className="w-8 h-8 rounded-full bg-bg-3 flex items-center justify-center"
+              >+</button>
+            </div>
           </Row>
         </Card>
       </Section>

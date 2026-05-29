@@ -9,13 +9,15 @@ import { WeightSparkline } from '../components/WeightSparkline';
 import { LogWeightSheet } from '../components/LogWeightSheet';
 import { SetHeightSheet } from '../components/SetHeightSheet';
 import { WeightHistorySheet } from '../components/WeightHistorySheet';
+import { AddSleepSheet } from '../components/AddSleepSheet';
 import { getWaterToday, setWater, listMealsForDate, addMeal, deleteMeal } from '../api/daily';
 import { getSettings } from '../api/settings';
 import { listWeightLogs, bmi, bmiBucket } from '../api/body';
+import { listSleepLogs } from '../api/sleep';
 import { format } from 'date-fns';
 import { tg } from '../lib/telegram';
 import { useGate } from '../hooks/useGate';
-import type { Meal, MealType, WeightLog } from '../types/db';
+import type { Meal, MealType, SleepLog, WeightLog } from '../types/db';
 
 export default function HealthScreen() {
   const qc = useQueryClient();
@@ -23,6 +25,7 @@ export default function HealthScreen() {
   const [weightOpen, setWeightOpen] = useState(false);
   const [heightOpen, setHeightOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [sleepOpen, setSleepOpen] = useState(false);
   const [mealName, setMealName] = useState('');
   const [mealType, setMealType] = useState<MealType>('meal');
   const [calories, setCalories] = useState('');
@@ -31,6 +34,7 @@ export default function HealthScreen() {
   const waterQ = useQuery({ queryKey: ['water', 'today'], queryFn: getWaterToday });
   const mealsQ = useQuery({ queryKey: ['meals', 'today'], queryFn: () => listMealsForDate() });
   const weightQ = useQuery({ queryKey: ['weight', 'logs'], queryFn: () => listWeightLogs(90) });
+  const sleepQ = useQuery({ queryKey: ['sleep', 'logs'], queryFn: () => listSleepLogs(14) });
   const settingsQ = useQuery({ queryKey: ['settings'], queryFn: getSettings });
 
   const setW = useMutation({
@@ -57,6 +61,11 @@ export default function HealthScreen() {
   const height = settingsQ.data?.height_cm ? Number(settingsQ.data.height_cm) : null;
   const bmiValue = latestWeight && height ? bmi(latestWeight, height) : 0;
   const bmiInfo = bmiBucket(bmiValue);
+
+  const sleepLogs = (sleepQ.data ?? []) as SleepLog[];
+  const latestSleep = sleepLogs.length ? sleepLogs[sleepLogs.length - 1] : null;
+  const sleepTarget = settingsQ.data?.sleep_target_hours ? Number(settingsQ.data.sleep_target_hours) : 8;
+  const avgSleep = sleepLogs.length === 0 ? 0 : sleepLogs.reduce((s, l) => s + Number(l.hours), 0) / sleepLogs.length;
 
   return (
     <div className="pb-6">
@@ -153,6 +162,61 @@ export default function HealthScreen() {
         </Card>
       </Section>
 
+      <Section title="Sleep" action={
+        <button onClick={gate(() => setSleepOpen(true))} className="text-accent text-[13px]">
+          {latestSleep && latestSleep.log_date === new Date().toISOString().slice(0, 10) ? 'Edit' : 'Log sleep'}
+        </button>
+      }>
+        <Card>
+          {latestSleep ? (
+            <>
+              <div className="flex items-center gap-4">
+                <div className="text-center">
+                  <div className="text-[28px] font-bold leading-none tabular-nums">
+                    {Number(latestSleep.hours).toFixed(1)}
+                    <span className="text-[14px] text-hint ml-0.5">h</span>
+                  </div>
+                  <div className={`text-[10px] mt-1 tracking-wider uppercase ${Number(latestSleep.hours) >= sleepTarget ? 'text-green-400' : 'text-amber-300'}`}>
+                    {Number(latestSleep.hours) >= sleepTarget ? '✓ Target' : `${(sleepTarget - Number(latestSleep.hours)).toFixed(1)}h short`}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <div className="text-[13px] text-hint">{format(new Date(latestSleep.log_date), 'EEE, MMM d')}</div>
+                  {latestSleep.bedtime && latestSleep.wake_time && (
+                    <div className="text-[12px] mt-0.5 tabular-nums">
+                      <span className="text-hint">🌙</span> {latestSleep.bedtime.slice(0, 5)} → {latestSleep.wake_time.slice(0, 5)} <span className="text-hint">☀️</span>
+                    </div>
+                  )}
+                  {latestSleep.quality !== null && latestSleep.quality !== undefined && (
+                    <div className="text-[14px] mt-0.5">
+                      {latestSleep.quality === 1 ? '😩' : latestSleep.quality === 2 ? '😕' : latestSleep.quality === 3 ? '😐' : latestSleep.quality === 4 ? '🙂' : '🤩'}
+                      <span className="text-[11px] text-hint ml-1.5">
+                        {['Awful', 'Poor', 'Okay', 'Good', 'Great'][latestSleep.quality - 1]}
+                      </span>
+                    </div>
+                  )}
+                  {sleepLogs.length >= 2 && (
+                    <div className="text-[11px] text-hint mt-1">
+                      14-day avg <span className="text-text font-semibold tabular-nums">{avgSleep.toFixed(1)}h</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {latestSleep.note && (
+                <div className="text-[12px] text-text/80 mt-3 italic line-clamp-2 border-t border-divider pt-2">"{latestSleep.note}"</div>
+              )}
+            </>
+          ) : (
+            <button
+              onClick={gate(() => setSleepOpen(true))}
+              className="w-full py-3 text-[13px] text-hint active:opacity-60"
+            >
+              No sleep logged yet. Tap to log last night.
+            </button>
+          )}
+        </Card>
+      </Section>
+
       <Section title="Hydration">
         <Card>
           <div className="flex items-center gap-4">
@@ -199,6 +263,7 @@ export default function HealthScreen() {
       <LogWeightSheet open={weightOpen} onClose={() => setWeightOpen(false)} initial={latestWeight ?? undefined} />
       <SetHeightSheet open={heightOpen} onClose={() => setHeightOpen(false)} initial={height ?? null} />
       <WeightHistorySheet open={historyOpen} onClose={() => setHistoryOpen(false)} />
+      <AddSleepSheet open={sleepOpen} onClose={() => setSleepOpen(false)} />
 
       <Sheet open={mealOpen} onClose={() => setMealOpen(false)} title="Log a meal">
         <div className="space-y-3 pt-2">
