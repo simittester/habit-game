@@ -28,7 +28,16 @@ export default function InboxScreen() {
 
   const delM = useMutation({
     mutationFn: (id: string) => deleteInboxItem(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['inbox'] }),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ['inbox'] });
+      const prev = qc.getQueryData<InboxItem[]>(['inbox']);
+      qc.setQueryData<InboxItem[]>(['inbox'], (old) => (old ?? []).filter((i) => i.id !== id));
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) qc.setQueryData(['inbox'], ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ['inbox'] }),
   });
 
   const promoteM = useMutation({

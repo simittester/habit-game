@@ -39,7 +39,19 @@ export default function MoneyScreen() {
     onSuccess: () => { tg.notify('success'); setAmount(''); setNote(''); setOpen(false); qc.invalidateQueries({ queryKey: ['expenses'] }); qc.invalidateQueries({ queryKey: ['score'] }); },
   });
 
-  const delM = useMutation({ mutationFn: deleteExpense, onSuccess: () => qc.invalidateQueries({ queryKey: ['expenses'] }) });
+  const delM = useMutation({
+    mutationFn: deleteExpense,
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: ['expenses', 'recent'] });
+      const prev = qc.getQueryData<Expense[]>(['expenses', 'recent']);
+      qc.setQueryData<Expense[]>(['expenses', 'recent'], (old) => (old ?? []).filter((e) => e.id !== id));
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) qc.setQueryData(['expenses', 'recent'], ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ['expenses'] }),
+  });
 
   const items = (q.data ?? []) as Expense[];
   const total = items.reduce((s, e) => s + Number(e.amount), 0);
