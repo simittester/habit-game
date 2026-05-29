@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
-import { Moon, RotateCw, History as HistoryIcon, ChevronRight, Flame } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Moon, RotateCw, History as HistoryIcon, ChevronRight, Flame, Sparkles, Trophy, ArrowRightCircle, Target } from 'lucide-react';
 import { Section, Card } from '../components/Card';
+import { Sheet } from '../components/Sheet';
+import { TextArea } from '../components/Input';
 import { RitualFlowSheet, type RitualField } from '../components/RitualFlowSheet';
 import { listReviews, upsertReview, getReviewByDate } from '../api/structure';
 import { fetchSummary } from '../api/daily';
@@ -13,30 +15,6 @@ import { useGate } from '../hooks/useGate';
 import type { Review, DailySummary } from '../types/db';
 
 type Tab = 'evening' | 'weekly' | 'history';
-
-const EVENING_FIELDS: RitualField[] = [
-  {
-    key: 'highlights',
-    title: 'What went well today?',
-    hint: 'Wins big or small. Note what you want more of.',
-    placeholder: 'I finished the report I was avoiding…',
-    suggestions: ['Showed up for the workout', 'Finished a deep work block', 'Helped someone', 'Said no to something draining'],
-  },
-  {
-    key: 'lowlights',
-    title: "What didn't go well?",
-    hint: 'Without judgment. Just naming it.',
-    placeholder: 'Got pulled into Twitter for an hour…',
-    suggestions: ['Scrolled too long', 'Skipped a habit', 'Reactive instead of proactive', 'Stayed up too late'],
-  },
-  {
-    key: 'next_focus',
-    title: 'One thing for tomorrow?',
-    hint: 'The single thing that would make tomorrow feel like a win.',
-    placeholder: 'Ship the proposal by lunch.',
-    suggestions: ['Wake up at 7', 'Hit my habits before noon', 'One hour of deep work first thing'],
-  },
-];
 
 const WEEKLY_FIELDS: RitualField[] = [
   {
@@ -193,7 +171,7 @@ function EveningTab({ today, streak, daysSince, onStart }: { today: DailySummary
           <div className="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center text-2xl">🌙</div>
           <div className="flex-1">
             <div className="font-bold text-[16px]">Start evening shutdown</div>
-            <div className="text-[12px] opacity-85">3 questions · 2 minutes to close the day clean.</div>
+            <div className="text-[12px] opacity-85">3 cards · 60 seconds to close the day clean.</div>
           </div>
           <ChevronRight size={20} />
         </button>
@@ -279,38 +257,44 @@ function HistoryTab({ reviews }: { reviews: Review[] }) {
   }
   return (
     <div className="px-4 space-y-2">
-      {reviews.map((r) => (
-        <Card key={r.id}>
-          <div className="flex items-center justify-between mb-1">
-            <div className="text-[13px] font-semibold capitalize">{r.kind} review</div>
-            <div className="text-[11px] text-hint">{format(new Date(r.review_date), 'EEE, MMM d, yyyy')}</div>
-          </div>
-          {r.highlights && (
-            <div className="mt-2">
-              <div className="text-[10px] text-hint tracking-wider uppercase">Highlights</div>
-              <div className="text-[14px] mt-0.5 whitespace-pre-wrap">{r.highlights}</div>
+      {reviews.map((r) => {
+        const isDaily = r.kind === 'daily';
+        const highlightLabel = isDaily ? 'Win' : 'Highlights';
+        const lowlightLabel = isDaily ? 'Carryover' : 'Lowlights';
+        const focusLabel = isDaily ? 'Tomorrow priority' : 'Next focus';
+        return (
+          <Card key={r.id}>
+            <div className="flex items-center justify-between mb-1">
+              <div className="text-[13px] font-semibold capitalize">{r.kind} review</div>
+              <div className="text-[11px] text-hint">{format(new Date(r.review_date), 'EEE, MMM d, yyyy')}</div>
             </div>
-          )}
-          {r.lowlights && (
-            <div className="mt-2">
-              <div className="text-[10px] text-hint tracking-wider uppercase">Lowlights</div>
-              <div className="text-[14px] mt-0.5 whitespace-pre-wrap">{r.lowlights}</div>
-            </div>
-          )}
-          {r.lessons && (
-            <div className="mt-2">
-              <div className="text-[10px] text-hint tracking-wider uppercase">Lessons</div>
-              <div className="text-[14px] mt-0.5 whitespace-pre-wrap">{r.lessons}</div>
-            </div>
-          )}
-          {r.next_focus && (
-            <div className="mt-2">
-              <div className="text-[10px] text-accent tracking-wider uppercase">Next focus</div>
-              <div className="text-[14px] mt-0.5 whitespace-pre-wrap text-accent">{r.next_focus}</div>
-            </div>
-          )}
-        </Card>
-      ))}
+            {r.highlights && (
+              <div className="mt-2">
+                <div className="text-[10px] text-hint tracking-wider uppercase">{highlightLabel}</div>
+                <div className="text-[14px] mt-0.5 whitespace-pre-wrap">{r.highlights}</div>
+              </div>
+            )}
+            {r.lowlights && (
+              <div className="mt-2">
+                <div className="text-[10px] text-hint tracking-wider uppercase">{lowlightLabel}</div>
+                <div className="text-[14px] mt-0.5 whitespace-pre-wrap">{r.lowlights}</div>
+              </div>
+            )}
+            {r.lessons && (
+              <div className="mt-2">
+                <div className="text-[10px] text-hint tracking-wider uppercase">Lessons</div>
+                <div className="text-[14px] mt-0.5 whitespace-pre-wrap">{r.lessons}</div>
+              </div>
+            )}
+            {r.next_focus && (
+              <div className="mt-2">
+                <div className="text-[10px] text-accent tracking-wider uppercase">{focusLabel}</div>
+                <div className="text-[14px] mt-0.5 whitespace-pre-wrap text-accent">{r.next_focus}</div>
+              </div>
+            )}
+          </Card>
+        );
+      })}
     </div>
   );
 }
@@ -328,34 +312,74 @@ function StatCard({ emoji, label, value, hint }: { emoji: string; label: string;
   );
 }
 
+interface EveningCardSpec {
+  key: 'highlights' | 'lowlights' | 'next_focus';
+  label: string;
+  prompt: string;
+  placeholder: string;
+  Icon: typeof Trophy;
+  accent: string; // tw color class for the icon chip bg
+  iconColor: string; // tw color class for the icon stroke
+}
+
+const EVENING_CARDS: EveningCardSpec[] = [
+  {
+    key: 'highlights',
+    label: 'WIN',
+    prompt: 'What worked today?',
+    placeholder: 'Closed the report I was dodging.',
+    Icon: Trophy,
+    accent: 'bg-emerald-500/15',
+    iconColor: 'text-emerald-400',
+  },
+  {
+    key: 'lowlights',
+    label: 'CARRYOVER',
+    prompt: 'What carries into tomorrow?',
+    placeholder: 'Reply to the design thread.',
+    Icon: ArrowRightCircle,
+    accent: 'bg-amber-500/15',
+    iconColor: 'text-amber-400',
+  },
+  {
+    key: 'next_focus',
+    label: 'TOMORROW PRIORITY',
+    prompt: 'The one thing that wins the day.',
+    placeholder: 'Ship the proposal before lunch.',
+    Icon: Target,
+    accent: 'bg-accent/20',
+    iconColor: 'text-accent',
+  },
+];
+
 function EveningSheet({ open, onClose, today }: { open: boolean; onClose: () => void; today: DailySummary | null }) {
   const qc = useQueryClient();
-  const [initial, setInitial] = useState<Record<string, string>>({});
+  const [values, setValues] = useState<Record<string, string>>({ highlights: '', lowlights: '', next_focus: '' });
 
-  // Pre-fill if a review already exists for today
-  useQuery({
+  // Pre-fill if a review already exists for today, otherwise reset
+  const existingQ = useQuery({
     queryKey: ['review', todayIso(), 'daily'],
-    queryFn: async () => {
-      const existing = await getReviewByDate(todayIso(), 'daily');
-      if (existing) {
-        setInitial({
-          highlights: existing.highlights ?? '',
-          lowlights: existing.lowlights ?? '',
-          next_focus: existing.next_focus ?? '',
-        });
-      }
-      return existing;
-    },
+    queryFn: () => getReviewByDate(todayIso(), 'daily'),
     enabled: open,
   });
 
+  useEffect(() => {
+    if (!open) return;
+    const existing = existingQ.data;
+    setValues({
+      highlights: existing?.highlights ?? '',
+      lowlights: existing?.lowlights ?? '',
+      next_focus: existing?.next_focus ?? '',
+    });
+  }, [open, existingQ.data]);
+
   const m = useMutation({
-    mutationFn: (values: Record<string, string>) => upsertReview({
+    mutationFn: (v: Record<string, string>) => upsertReview({
       kind: 'daily',
       review_date: todayIso(),
-      highlights: values.highlights || '',
-      lowlights: values.lowlights || '',
-      next_focus: values.next_focus || '',
+      highlights: v.highlights.trim(),
+      lowlights: v.lowlights.trim(),
+      next_focus: v.next_focus.trim(),
     }),
     onSuccess: () => {
       tg.notify('success');
@@ -365,45 +389,91 @@ function EveningSheet({ open, onClose, today }: { open: boolean; onClose: () => 
     },
   });
 
-  const intro = (
-    <div>
-      <div className="text-5xl mb-3">🌙</div>
-      <h2 className="text-[22px] font-bold leading-tight">Close out the day.</h2>
-      <p className="text-[13px] text-hint mt-1">Three questions. Two minutes. Sleep with a clean mind.</p>
-
-      {today && (
-        <div className="mt-4 bg-bg-3 rounded-2xl p-3">
-          <div className="text-[11px] text-hint tracking-wider uppercase mb-2">Today</div>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div>
-              <div className="text-[10px] text-hint">Habits</div>
-              <div className="text-[15px] font-semibold tabular-nums">{today.habits_done}/{today.habits_planned}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-hint">Tasks</div>
-              <div className="text-[15px] font-semibold tabular-nums">{today.tasks_done}/{today.tasks_total}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-hint">Water</div>
-              <div className="text-[15px] font-semibold tabular-nums">{today.water_glasses}/{today.water_target}</div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  const setField = (key: string, val: string) => setValues((prev) => ({ ...prev, [key]: val }));
+  const filledCount = EVENING_CARDS.filter((c) => values[c.key]?.trim().length > 0).length;
+  const canSave = filledCount > 0 && !m.isPending;
 
   return (
-    <RitualFlowSheet
-      open={open}
-      onClose={onClose}
-      title="Evening shutdown"
-      intro={intro}
-      fields={EVENING_FIELDS}
-      initialValues={initial}
-      onSubmit={(v) => m.mutateAsync(v).then(() => undefined)}
-      submitting={m.isPending}
-    />
+    <Sheet open={open} onClose={onClose} title="Evening shutdown" fullHeight>
+      <div className="pb-2">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="text-4xl">🌙</div>
+          <div className="flex-1">
+            <h2 className="text-[20px] font-bold leading-tight">Close the day clean.</h2>
+            <p className="text-[12px] text-hint">Three cards. One short answer each.</p>
+          </div>
+        </div>
+
+        {today && (
+          <div className="mt-3 bg-bg-3 rounded-2xl p-3">
+            <div className="text-[10px] text-hint tracking-wider uppercase mb-1.5">Today</div>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div>
+                <div className="text-[10px] text-hint">Habits</div>
+                <div className="text-[15px] font-semibold tabular-nums">{today.habits_done}/{today.habits_planned}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-hint">Tasks</div>
+                <div className="text-[15px] font-semibold tabular-nums">{today.tasks_done}/{today.tasks_total}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-hint">Water</div>
+                <div className="text-[15px] font-semibold tabular-nums">{today.water_glasses}/{today.water_target}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-4 space-y-3">
+          {EVENING_CARDS.map((card) => (
+            <EveningCard
+              key={card.key}
+              spec={card}
+              value={values[card.key] ?? ''}
+              onChange={(v) => setField(card.key, v)}
+            />
+          ))}
+        </div>
+
+        <div className="mt-5 sticky bottom-0 bg-bg-2 pt-2 pb-1">
+          <button
+            onClick={() => { tg.haptic('medium'); m.mutate(values); }}
+            disabled={!canSave}
+            className="w-full py-3.5 rounded-full bg-accent text-white font-semibold flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 transition"
+          >
+            {m.isPending ? 'Saving…' : <>Finish <Sparkles size={18} /></>}
+          </button>
+          <div className="text-[11px] text-hint text-center mt-2">
+            {filledCount === 0 ? 'Fill at least one card.' : `${filledCount} of 3 filled`}
+          </div>
+        </div>
+      </div>
+    </Sheet>
+  );
+}
+
+function EveningCard({ spec, value, onChange }: { spec: EveningCardSpec; value: string; onChange: (v: string) => void }) {
+  const filled = value.trim().length > 0;
+  const { Icon } = spec;
+  return (
+    <div className={`rounded-2xl p-3.5 bg-bg-3 transition border ${filled ? 'border-accent/40' : 'border-transparent'}`}>
+      <div className="flex items-center gap-2.5 mb-2">
+        <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${spec.accent}`}>
+          <Icon size={16} className={spec.iconColor} />
+        </div>
+        <div className="flex-1">
+          <div className="text-[10px] tracking-[0.12em] font-semibold text-hint">{spec.label}</div>
+          <div className="text-[14px] font-medium">{spec.prompt}</div>
+        </div>
+      </div>
+      <TextArea
+        rows={2}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={spec.placeholder}
+        maxLength={300}
+      />
+    </div>
   );
 }
 
