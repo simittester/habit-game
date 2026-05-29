@@ -103,34 +103,34 @@ export function PaywallSheet() {
     setPollingAfterCheckout(true);
   };
 
-  const blocking = sub.status === 'expired';
+  // Even when trial is expired, allow dismissal so users can browse their data.
+  // Mutations stay blocked via useGate (they'd re-open this sheet on tap).
+  const isExpired = sub.status === 'expired';
 
   return (
     <Sheet
       open={open}
-      onClose={() => { if (!blocking) setOpen(false); }}
+      onClose={() => setOpen(false)}
       title="Unlock Momentum"
       fullHeight
     >
       <div className="relative">
-        {!blocking && (
-          <button
-            onClick={() => { tg.haptic('light'); setOpen(false); }}
-            className="absolute right-0 top-0 w-9 h-9 rounded-full bg-bg-3 flex items-center justify-center active:opacity-70"
-            aria-label="Close"
-          >
-            <X size={16} />
-          </button>
-        )}
+        <button
+          onClick={() => { tg.haptic('light'); setOpen(false); }}
+          className="absolute right-0 top-0 w-9 h-9 rounded-full bg-bg-3 flex items-center justify-center active:opacity-70"
+          aria-label="Close"
+        >
+          <X size={16} />
+        </button>
 
         <div className="text-center pt-1">
           <div className="text-5xl mb-2">🔥</div>
           <h2 className="text-[24px] font-bold leading-tight">
-            {blocking ? 'Trial ended — pick a plan' : 'Get the full Momentum'}
+            {isExpired ? 'Trial ended — pick a plan' : 'Get the full Momentum'}
           </h2>
           <p className="text-[13px] text-hint mt-1 max-w-[280px] mx-auto">
-            {blocking
-              ? 'Your data is safe. Pick a plan to keep editing and adding.'
+            {isExpired
+              ? 'Your data is safe. Browse any time — pick a plan to keep adding.'
               : 'Build the days you actually want. Cancel any time.'}
           </p>
         </div>
